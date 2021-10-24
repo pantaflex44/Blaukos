@@ -20,9 +20,18 @@
 
 namespace Web;
 
+use Core\Controllers\HomeController;
+
 require_once('../core/engine.php');
 
 // instanciate new engine
 $engine = new \Core\Engine();
 
-var_dump($engine->db()->connection());
+//var_dump($engine->db()->connection());
+
+
+
+//$engine->route()->add('home', 'GET', '/', [HomeController::class, 'index']);
+//$engine->route()->add('bob', 'GET', '/post/{id:integer}/{name:string}', [HomeController::class, 'index']);
+//$engine->route()->add('store', 'POST', '/post', [HomeController::class, 'index']);
+$engine->route()->map();

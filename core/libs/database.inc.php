@@ -26,7 +26,7 @@ use ReflectionClass;
 /**
  * Manage databases
  */
-class DB
+class Database
 {
 
     /**

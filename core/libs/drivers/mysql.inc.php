@@ -20,9 +20,12 @@
 
 namespace Core\Libs\Drivers;
 
+use Core\Libs\Env;
 use PDO;
 use PDOException;
 use Core\Libs\IDB;
+
+use function Core\Libs\abort;
 
 /**
  * MySQL Database manager
@@ -65,17 +68,19 @@ final class Mysql implements IDB
             // return the new PDO object
             return $pdo;
         } catch (PDOException $pdoe) {
-            $errorMessage = sprintf(
-                '[%s] MySQL PDO connection error: (%s) %s {file: %s}',
-                getenv('APP_NAME'),
-                $pdoe->getCode(),
-                $pdoe->getMessage(),
-                __FILE__
-            );
-            error_log($errorMessage, 0);
+            if (Env::get('APP_DEBUG', 'true') == 'true') {
+                $errorMessage = sprintf(
+                    '[%s] MySQL PDO connection error: (%s) %s {file: %s at line %d}',
+                    getenv('APP_NAME'),
+                    $pdoe->getCode(),
+                    $pdoe->getMessage(),
+                    __FILE__,
+                    __LINE__
+                );
+                error_log($errorMessage, 0);
+            }
 
-            http_response_code(500);
-            exit;
+            abort(500);
         }
     }
 
