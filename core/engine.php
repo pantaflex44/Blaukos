@@ -20,8 +20,6 @@
 
 namespace Core;
 
-use Core\Controllers\ErrorsController;
-use Core\Controllers\HomeController;
 use Core\Libs\Env;
 use Core\Libs\Database;
 use Core\Libs\Form;
@@ -104,7 +102,6 @@ class Engine
         return $this->_twig;
     }
 
-
     /**
      * Constructor
      */
@@ -118,8 +115,6 @@ class Engine
 
         // give access to Route manager and load default routes
         $this->_route = new Route($this);
-        $this->_route->add('404', 'GET', '/404', [ErrorsController::class, 'error404']);
-        $this->_route->add('home', 'GET', '/', [HomeController::class, 'index']);
 
         // give access to Form manager
         $this->_form = new Form($this);
@@ -134,8 +129,7 @@ class Engine
                 'debug' => (Env::get('APP_DEBUG', 'true') == 'true' ? true : false),
                 'charset' => 'utf-8',
             ]);
-            $this->_twig->addExtension(new CustomTwigExtensions());
-            $this->_twigContext['env'] = $_ENV;
+            $this->_twig->addExtension(new CustomTwigExtensions($this));
         }
     }
 
@@ -154,7 +148,7 @@ class Engine
         }
 
         // else, load and show template page
-        $content = $this->_twig->render(
+        $content = $this->twig()->render(
             $name . '.twig',
             array_merge(
                 [

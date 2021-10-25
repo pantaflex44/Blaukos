@@ -72,8 +72,10 @@ class __TwigTemplate_a2e54efac9be8f93375000ad63e6c72a75f564835265816e67cba3b8749
                 </p>
             </div>
             <div class=\"col-12 text-nowrap text-center align-self-start\">
-                <a href=\"/\" class=\"btn btn-outline-secondary\">";
+                <a href=\"";
         // line 21
+        echo twig_escape_filter($this->env, call_user_func_array($this->env->getFunction('route')->getCallable(), ["home"]), "html", null, true);
+        echo "\" class=\"btn btn-outline-secondary\">";
         echo twig_escape_filter($this->env, _("retourner à l'accueil"), "html", null, true);
         echo "</a>
             </div>
@@ -119,7 +121,7 @@ class __TwigTemplate_a2e54efac9be8f93375000ad63e6c72a75f564835265816e67cba3b8749
                 </p>
             </div>
             <div class=\"col-12 text-nowrap text-center align-self-start\">
-                <a href=\"/\" class=\"btn btn-outline-secondary\">{{ \"retourner à l'accueil\"|_ }}</a>
+                <a href=\"{{ route('home') }}\" class=\"btn btn-outline-secondary\">{{ \"retourner à l'accueil\"|_ }}</a>
             </div>
         </div>
     </div>

@@ -24,6 +24,7 @@ use Core\Engine;
 use Exception;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
 
 use function Core\Libs\uritoarray;
 
@@ -32,12 +33,148 @@ use function Core\Libs\uritoarray;
  */
 class Route
 {
+    private const FILE = __DIR__ . '/../datas/routes.datas';
 
     private Engine $_engine;
 
     private string $_method = 'GET';
     private array $_uri = [];
     private array $_routes = [];
+
+    /**
+     * Call a method from a conttoller with params
+     *
+     * @param callable $callback Callback to execute
+     * @param array $params Array of callback parameters
+     * @return void
+     */
+    private function _call(callable $callback, array $params = [])
+    {
+        if (call_user_func_array($callback, $params) === false) {
+            if (Env::get('APP_DEBUG', 'true') == 'true') {
+                $errorMessage = sprintf(
+                    '[%s] Route callback error: %s {file: %s at line %d}',
+                    getenv('APP_NAME'),
+                    var_export($callback),
+                    __FILE__,
+                    __LINE__
+                );
+                error_log($errorMessage, 0);
+            }
+
+            abort(500);
+        }
+    }
+
+    /**
+     * Scan declared controllers to auto add routes from methods comment
+     *
+     * @return void
+     */
+    private function _scan()
+    {
+        $ctrlFiles = glob(__DIR__ . '/../controllers/*Controller.inc.php');
+
+        foreach ($ctrlFiles as $file) {
+            if (preg_match('/(.*)\/(.+)\.inc\.php/', $file, $match)) {
+                if (!is_array($match) || count($match) != 3) {
+                    continue;
+                }
+
+                $className = '\\Core\\Controllers\\' . ucfirst($match[2]);
+                $cls = new ReflectionClass($className);
+                if (!$cls->isSubclassOf('\\Core\\Libs\\Controller')) {
+                    continue;
+                }
+
+                $methods = $cls->getMethods(ReflectionMethod::IS_PUBLIC);
+                foreach ($methods as $method) {
+                    $doc = $method->getDocComment();
+                    if (preg_match_all('/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/', $doc, $matches)) {
+                        if (!is_array($matches) || count($matches) != 4) {
+                            continue;
+                        }
+
+                        for ($i = 0; $i < count($matches[0]); $i++) {
+                            $routeName = $matches[1][$i];
+                            $routeMethod = $matches[2][$i];
+                            $routeUri = $matches[3][$i];
+                            $routeCallback = [$className, $method->name];
+
+                            $this->add(
+                                $routeName,
+                                $routeMethod,
+                                $routeUri,
+                                $routeCallback
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        if (Env::get('APP_USECACHE', 'false') == 'true') {
+            $this->_save();
+        }
+    }
+
+    /**
+     * Save routes for caching
+     *
+     * @return void
+     */
+    private function _save()
+    {
+        $routes = [];
+
+        foreach ($this->_routes as $name => $route) {
+            $method = $route['method'];
+            $uri = '/' . arrayToUri($route['uri']);
+            $callback = [
+                get_class($route['callback'][0]),
+                $route['callback'][1],
+            ];
+
+            $routes[$name] = [
+                'method' => $method,
+                'uri' => $uri,
+                'callback' => $callback,
+            ];
+        }
+
+        $srz = serialize($routes);
+        @file_put_contents(self::FILE, $srz);
+    }
+
+    /**
+     * Load cached routes
+     *
+     * @return boolean true, if correctly loaded, else, false
+     */
+    private function _load(): bool
+    {
+        if (!file_exists(self::FILE)) {
+            return false;
+        }
+
+        try {
+            $srz = file_get_contents(self::FILE);
+            if ($srz === false) {
+                return false;
+            }
+
+            $routes = unserialize($srz);
+
+            $this->_routes = [];
+            foreach ($routes as $name => $route) {
+                $this->add($name, $route['method'], $route['uri'], $route['callback']);
+            }
+
+            return true;
+        } catch (Exception $ex) {
+            return false;
+        }
+    }
 
     /**
      * Constructor
@@ -54,6 +191,14 @@ class Route
             ? trim(filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_STRING))
             : '/';
         $this->_uri = uriToArray($uri);
+
+        $cacheLoaded = false;
+        if (Env::get('APP_USECACHE', 'false') == 'true') {
+            $cacheLoaded = $this->_load();
+        }
+        if (!$cacheLoaded) {
+            $this->_scan();
+        }
     }
 
     /**
@@ -62,26 +207,26 @@ class Route
      * @param string $name Route name
      * @param string $method HTTP method ('GET', 'POST', 'DELETE', 'PUT')
      * @param string $uri Uri to query start with a / (eg: / | /post/{varname:type}). 'varname' is the varname without the $, type is a php gettype() return value @see https://www.php.net/manual/fr/function.gettype.php 
-     * @param array $route Array of the callable controller (eg: [HomeController::class, 'index'])
+     * @param array $callback Array of the callable controller (eg: [HomeController::class, 'index'])
      * @return void
      */
-    public function add(string $name, string $method, string $uri, array $route): bool
+    public function add(string $name, string $method, string $uri, array $callback): bool
     {
         $method = strtoupper(trim($method));
         if ($method != 'GET' && $method != 'POST' && $method != 'DELETE' && $method != 'PUT') {
             return false;
         }
 
-        if (count($route) != 2 || !is_string($route[0]) || !is_string($route[1])) {
+        if (count($callback) != 2 || !is_string($callback[0]) || !is_string($callback[1])) {
             return false;
         }
 
-        $cls = new $route[0]($this->_engine);
+        $cls = new $callback[0]($this->_engine);
         if (is_null($cls)) {
             return false;
         }
 
-        $caller = [$cls, $route[1]];
+        $caller = [$cls, $callback[1]];
         if (!is_callable($caller, false, $callback)) {
             return false;
         }
@@ -156,20 +301,7 @@ class Route
             }
 
             if ($callable) {
-                if (call_user_func_array($route['callback'], $params) === false) {
-                    if (Env::get('APP_DEBUG', 'true') == 'true') {
-                        $errorMessage = sprintf(
-                            '[%s] Route callback error: %s {file: %s at line %d}',
-                            getenv('APP_NAME'),
-                            var_export($route['callback']),
-                            __FILE__,
-                            __LINE__
-                        );
-                        error_log($errorMessage, 0);
-                    }
-
-                    abort(500);
-                }
+                $this->_call($route['callback'], $params);
                 break;
             }
         }
@@ -219,19 +351,6 @@ class Route
             return;
         }
 
-        if (call_user_func_array($this->_routes[$name]['callback'], $params) === false) {
-            if (Env::get('APP_DEBUG', 'true') == 'true') {
-                $errorMessage = sprintf(
-                    '[%s] Route callback error: %s {file: %s at line %d}',
-                    getenv('APP_NAME'),
-                    var_export($this->_routes[$name]['callback']),
-                    __FILE__,
-                    __LINE__
-                );
-                error_log($errorMessage, 0);
-            }
-
-            abort(500);
-        }
+        $this->_call($this->_routes[$name]['callback'], $params);
     }
 }

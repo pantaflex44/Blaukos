@@ -21,7 +21,6 @@
 namespace Core\Controllers;
 
 use Core\Libs\Controller;
-use Core\Libs\Env;
 
 use function Core\Libs\abort;
 
@@ -34,6 +33,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 404
      *
+     * @route '404' 'GET' '/404'
      * @return void
      */
     public function error404()

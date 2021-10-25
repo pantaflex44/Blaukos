@@ -20,6 +20,7 @@
 
 namespace Core\Libs\Twig;
 
+use Core\Engine;
 use Core\Libs\Env;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -27,6 +28,13 @@ use Twig\TwigFunction;
 
 class CustomTwigExtensions extends AbstractExtension
 {
+
+    private Engine $_engine;
+
+    public function __construct(Engine $engine)
+    {
+        $this->_engine = $engine;
+    }
 
     public function getFilters(): array
     {
@@ -40,6 +48,10 @@ class CustomTwigExtensions extends AbstractExtension
         return [
             new TwigFunction('env', function (string $key, string $default = ''): string {
                 return Env::get($key, $default);
+            }),
+
+            new TwigFunction('route', function (string $name, array $params = []): string {
+                return $this->_engine->route()->get($name, $params);
             }),
 
             /*new \Twig\TwigFunction('js_path', function () {

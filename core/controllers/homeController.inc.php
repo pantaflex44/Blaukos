@@ -31,11 +31,13 @@ class HomeController extends Controller
     /**
      * Controller: index
      *
+     * @route 'home' 'GET' '/'
      * @return void
      */
     public function index()
     {
         var_dump('HomeController@index');
         // render twig template
+
     }
 }

@@ -29,6 +29,7 @@ class Controller
 {
 
     private Engine $_engine;
+    private static array $_controllers = [];
 
     /**
      * Get the engine
@@ -41,6 +42,16 @@ class Controller
     }
 
     /**
+     * List all known controllers
+     *
+     * @return array Known controllers
+     */
+    public static function controllers(): array
+    {
+        return self::$_controllers;
+    }
+
+    /**
      * Constructor
      *
      * @param Engine $engine An engine instance
@@ -48,5 +59,10 @@ class Controller
     public function __construct(Engine $engine)
     {
         $this->_engine = $engine;
+
+        $ctrlName = get_class($this);
+        if (!in_array($ctrlName, self::$_controllers)) {
+            self::$_controllers[] = $ctrlName;
+        }
     }
 }
