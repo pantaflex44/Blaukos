@@ -46,16 +46,16 @@ final class Mysql implements IDB
             // construct connection string
             $connectionString = sprintf(
                 'mysql:dbname=%s;host=%s;port=%d;charset=utf8',
-                getenv('DATABASE_NAME'),
-                getenv('DATABASE_HOST'),
-                getenv('DATABASE_PORT')
+                Env::get('DATABASE_NAME'),
+                Env::get('DATABASE_HOST'),
+                Env::get('DATABASE_PORT')
             );
 
             // return the MySQL PDO object
             $pdo = new PDO(
                 $connectionString,
-                getenv('DATABASE_USERNAME'),
-                getenv('DATABASE_PASSWORD'),
+                Env::get('DATABASE_USERNAME'),
+                Env::get('DATABASE_PASSWORD'),
                 array(
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 )
@@ -71,7 +71,7 @@ final class Mysql implements IDB
             if (Env::get('APP_DEBUG', 'true') == 'true') {
                 $errorMessage = sprintf(
                     '[%s] MySQL PDO connection error: (%s) %s {file: %s at line %d}',
-                    getenv('APP_NAME'),
+                    Env::get('APP_NAME'),
                     $pdoe->getCode(),
                     $pdoe->getMessage(),
                     __FILE__,

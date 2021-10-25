@@ -54,7 +54,7 @@ class Route
             if (Env::get('APP_DEBUG', 'true') == 'true') {
                 $errorMessage = sprintf(
                     '[%s] Route callback error: %s {file: %s at line %d}',
-                    getenv('APP_NAME'),
+                    Env::get('APP_NAME'),
                     var_export($callback),
                     __FILE__,
                     __LINE__
