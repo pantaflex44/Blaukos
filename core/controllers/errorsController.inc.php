@@ -38,7 +38,7 @@ class ErrorsController extends Controller
      */
     public function error404()
     {
-        $this->engine()->render('404');
+        $this->engine()->template()->render('404');
 
         abort(404);
     }

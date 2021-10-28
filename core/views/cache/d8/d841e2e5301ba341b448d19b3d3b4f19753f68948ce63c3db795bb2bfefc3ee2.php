@@ -43,7 +43,10 @@ class __TwigTemplate_dcaac826d374596c492c9e8c0d31f7932dcfbac23e1d7e9e973efd975ab
         echo twig_escape_filter($this->env, ($context["dir"] ?? null), "html", null, true);
         echo "\">
     <head>
-        <meta charset=\"UTF-8\">
+        <meta charset=\"";
+        // line 4
+        echo twig_escape_filter($this->env, ($context["charset"] ?? null), "html", null, true);
+        echo "\">
         <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
         
@@ -120,7 +123,7 @@ class __TwigTemplate_dcaac826d374596c492c9e8c0d31f7932dcfbac23e1d7e9e973efd975ab
 
     public function getDebugInfo()
     {
-        return array (  107 => 34,  103 => 33,  98 => 36,  96 => 33,  73 => 13,  68 => 11,  62 => 10,  58 => 9,  52 => 8,  41 => 2,  38 => 1,);
+        return array (  110 => 34,  106 => 33,  101 => 36,  99 => 33,  76 => 13,  71 => 11,  65 => 10,  61 => 9,  55 => 8,  48 => 4,  41 => 2,  38 => 1,);
     }
 
     public function getSourceContext()
@@ -128,7 +131,7 @@ class __TwigTemplate_dcaac826d374596c492c9e8c0d31f7932dcfbac23e1d7e9e973efd975ab
         return new Source("<!DOCTYPE html>
 <html lang=\"{{ lang }}\" dir=\"{{ dir }}\">
     <head>
-        <meta charset=\"UTF-8\">
+        <meta charset=\"{{ charset }}\">
         <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
         

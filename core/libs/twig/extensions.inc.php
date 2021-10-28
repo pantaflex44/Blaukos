@@ -22,6 +22,7 @@ namespace Core\Libs\Twig;
 
 use Core\Engine;
 use Core\Libs\Env;
+use Core\Libs\Settings;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -48,6 +49,10 @@ class CustomTwigExtensions extends AbstractExtension
         return [
             new TwigFunction('env', function (string $key, string $default = ''): string {
                 return Env::get($key, $default);
+            }),
+
+            new TwigFunction('settings', function (string $key, $default) {
+                return Settings::get($key, $default);
             }),
 
             new TwigFunction('route', function (string $name, array $params = []): string {

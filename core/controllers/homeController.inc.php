@@ -39,5 +39,6 @@ class HomeController extends Controller
         var_dump('HomeController@index');
         // render twig template
 
+        var_dump($this->engine()->tr()->getAvaillables());
     }
 }

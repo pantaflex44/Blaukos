@@ -1,6 +1,6 @@
 .env
-kuntomanager.localhost-key.pem
-kuntomanager.localhost.pem
 error.log
 access.log
 core/views/cache/*
+blaukos.localhost-key.pem
+blaukos.localhost.pem

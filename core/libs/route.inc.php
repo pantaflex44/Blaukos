@@ -23,7 +23,6 @@ namespace Core\Libs;
 use Core\Engine;
 use Exception;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 
 use function Core\Libs\uritoarray;
@@ -90,6 +89,10 @@ class Route
                 $methods = $cls->getMethods(ReflectionMethod::IS_PUBLIC);
                 foreach ($methods as $method) {
                     $doc = $method->getDocComment();
+                    if ($doc === false) {
+                        continue;
+                    }
+
                     if (preg_match_all('/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/', $doc, $matches)) {
                         if (!is_array($matches) || count($matches) != 4) {
                             continue;
@@ -352,5 +355,27 @@ class Route
         }
 
         $this->_call($this->_routes[$name]['callback'], $params);
+    }
+
+    /**
+     * Purge cached routes
+     *
+     * @return void
+     */
+    public function purge()
+    {
+        @unlink(self::FILE);
+    }
+
+    /**
+     * Purge and re-scan controllers
+     *
+     * @return void
+     */
+    public function reset()
+    {
+        $this->purge();
+
+        $this->_scan();
     }
 }
