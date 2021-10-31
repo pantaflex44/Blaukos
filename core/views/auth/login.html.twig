@@ -1,0 +1,69 @@
+{#
+
+Blaukos - PHP Micro Framework
+
+MIT License
+
+Copyright (C) 2021 Christophe LEMOINE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+#}
+
+{% set title = "Connexion"|_ %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+
+    <main class="py-5">
+        <div class="card mx-auto" style="width: 90%; max-width: 30rem;">
+            <div class="card-header">
+                <div class="d-flex flex-row gap-2">
+                    <img src="/images/login.png" width="24" height="24">
+                    {{ "Connexion"|_ }}
+                </div>
+            </div>
+            <div class="card-body mx-sm-4 my-3">
+                <form method="{{ formMethod }}" action="{{ action }}">
+                    {{ csrfField|raw }}
+
+                    <label for="username" class="form-label">Nom d'utilisateur</label>
+                    <input type="text" class="form-control mb-3" id="username" name="username" placeholder=" " autocomplete="off">
+
+                    <label for="password" class="form-label">Mot de passe</label>
+                    <div class="input-group flex-nowrap mb-1">
+                        <input type="password" class="form-control" id="password" name="password" placeholder=" " aria-label="{{ "Mot de passe"|_ }}" aria-describedby="passwordView" autocomplete="off">
+                        <span class="input-group-text text-muted" style="cursor: pointer;" id="passwordView" title="{{ "Voir le mot de passe"|_ }}" onmousedown="document.getElementById('password').setAttribute('type', 'text');" onmouseup="document.getElementById('password').setAttribute('type', 'password');">
+                            <i class="fad fa-eye"></i>
+                        </span>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer py-3">
+                <div class="d-flex flex-row gap-2 justify-content-between">
+                    <a class="btn btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "retour"|_ }}</a>
+                    <a class="btn btn-success" onclick="document.forms[0].submit();">{{ "connexion"|_ }}</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {% include 'footer.html.twig' %}
+{% endblock body %}

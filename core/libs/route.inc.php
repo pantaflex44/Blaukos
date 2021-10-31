@@ -1,21 +1,29 @@
 <?php
 
 /**
- * KuntoManager - Logiciel de gestion de salles de sports
+ * Blaukos - PHP Micro Framework
+ * 
+ * MIT License
+ * 
  * Copyright (C) 2021 Christophe LEMOINE
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 namespace Core\Libs;
@@ -50,18 +58,16 @@ class Route
     private function _call(callable $callback, array $params = [])
     {
         if (call_user_func_array($callback, $params) === false) {
-            if (Env::get('APP_DEBUG', 'true') == 'true') {
-                $errorMessage = sprintf(
-                    '[%s] Route callback error: %s {file: %s at line %d}',
-                    Env::get('APP_NAME'),
-                    var_export($callback),
-                    __FILE__,
-                    __LINE__
-                );
-                error_log($errorMessage, 0);
-            }
+            logError(
+                sprintf(
+                    'Route callback error: %s',
+                    var_export($callback, true)
+                ),
+                __FILE__,
+                __LINE__
+            );
 
-            abort(500);
+            $this->call('500');
         }
     }
 
@@ -72,7 +78,7 @@ class Route
      */
     private function _scan()
     {
-        $ctrlFiles = glob(__DIR__ . '/../controllers/*Controller.inc.php');
+        $ctrlFiles = glob(__DIR__ . '/../{,*/,*/*/,*/*/*/,*/*/*/*/}*Controller.inc.php', GLOB_BRACE);
 
         foreach ($ctrlFiles as $file) {
             if (preg_match('/(.*)\/(.+)\.inc\.php/', $file, $match)) {
@@ -311,7 +317,6 @@ class Route
 
         if (!$callable) {
             $this->call('404');
-            exit;
         }
     }
 
@@ -355,6 +360,34 @@ class Route
         }
 
         $this->_call($this->_routes[$name]['callback'], $params);
+    }
+
+    /**
+     * Call controller of route by her name to redirect
+     *
+     * @param string $name Name of the route
+     * @param int $afterDelay Delay in seconds then redirect to route name
+     * @return void
+     */
+    public function redirect(string $name, int $afterDelay = 0)
+    {
+        $name = makeSlug($name);
+
+        if (!array_key_exists($name, $this->_routes)) {
+            return;
+        }
+
+        if ($this->_routes[$name]['method'] != 'GET') {
+            return;
+        }
+
+        $uri = arrayToUri($this->_routes[$name]['uri']);
+        if ($afterDelay == 0) {
+            header("location: /$uri");
+        } else {
+            header("refresh: $afterDelay; url=/$uri");
+        }
+        exit;
     }
 
     /**

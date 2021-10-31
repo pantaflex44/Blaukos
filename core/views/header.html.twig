@@ -1,0 +1,61 @@
+{#
+
+Blaukos - PHP Micro Framework
+
+MIT License
+
+Copyright (C) 2021 Christophe LEMOINE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+#}
+
+<header>
+    <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-faded">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ route('home') }}">
+                <img src="/images/logo24.png" alt="{{ env('APP_NAME') }}" class="d-inline-block align-text-top">
+                {{ env('APP_NAME') }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                <span class="navbar-text small me-sm-3 d-sm-none d-md-block">
+                    <small>{{ env('APP_SLOGAN') }}</small>
+                </span>
+                {% if user is defined %}
+                <div class="navbar-nav">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    <a class="nav-link" href="#">Features</a>
+                    <a class="nav-link" href="#">Pricing</a>
+                    <a class="nav-link disabled">Disabled</a>
+                </div>
+                {% endif %}
+                <div class="navbar-nav">
+                    {% if user is defined %}
+                    <a class="btn btn-outline-danger btn-sm mt-3 mt-sm-0" href="{{ route('logout') }}">{{ "Déconnexion"|_ }}</a>
+                    {% elseif templateName != 'login' %}
+                    <a class="btn btn-outline-secondary btn-sm mt-3 mt-sm-0" href="{{ route('login') }}">{{ "Connexion"|_ }}</a>  
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>

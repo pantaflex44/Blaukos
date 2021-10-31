@@ -1,0 +1,198 @@
+<?php
+
+/**
+ * Blaukos - PHP Micro Framework
+ * 
+ * MIT License
+ * 
+ * Copyright (C) 2021 Christophe LEMOINE
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace Core\Controllers;
+
+use Core\Libs\Controller;
+use Core\Libs\Env;
+use Core\Models\User;
+
+use function Core\Libs\isAuth;
+use function Core\Libs\logError;
+use function Core\Libs\sendJSON;
+
+/**
+ * Controllers group to manage home/index page
+ */
+class AuthController extends Controller
+{
+
+    /**
+     * Controller: login
+     * Only for web app, render a login form to authentificate
+     *
+     * @route 'login' 'GET' '/login'
+     * @return void
+     */
+    public function login()
+    {
+        $user = isAuth($this->engine());
+        if (!is_null($user)) {
+            $this->engine()->route()->call('400');
+        }
+
+        if (Env::get('APP_TYPE') == 'api') {
+            // it's an api
+            $this->engine()->route()->call('404');
+        }
+
+        if (Env::get('APP_TYPE') == 'web') {
+            // it's a web app
+            $formId = $this->engine()->form()->createRandomFormId();
+            $csrfField = $this->engine()->form()->csrfHiddenInput($formId);
+
+            $this->engine()->template()->render(
+                'auth/login',
+                [
+                    'formId' => $formId,
+                    'formMethod' => 'POST',
+                    'csrfField' => $csrfField,
+                    'action' => 'authentificate',
+                ]
+            );
+        }
+    }
+
+    /**
+     * Controller: logout
+     *
+     * @route 'logout' 'GET' '/logout'
+     * @return void
+     */
+    public function logout()
+    {
+        $user = isAuth($this->engine());
+        if (is_null($user)) {
+            $this->engine()->route()->call('400');
+        }
+
+        $user->clearToken();
+
+        if (Env::get('APP_TYPE') == 'api') {
+            // it's an api
+            sendJSON(['action' => 'home']);
+        }
+
+        if (Env::get('APP_TYPE') == 'web') {
+            // it's a web app
+            if (isset($_SESSION['JWT_TOKEN'])) {
+                unset($_SESSION['JWT_TOKEN']);
+            }
+
+            $this->engine()->route()->redirect('home');
+        }
+    }
+
+    /**
+     * Controller: authentificate
+     * Authentificate an user from 'username' and 'password' form post value
+     *
+     * @route 'authentificate' 'POST' '/authentificate'
+     * @return void
+     */
+    public function authentificate()
+    {
+        if (!$this->engine()->form()->csrfVerify()) {
+            $this->engine()->route()->call('400');
+        }
+
+        $username = isset($this->engine()->form()->username)
+            ? $this->engine()->form()->username
+            : null;
+        $password = isset($this->engine()->form()->password)
+            ? $this->engine()->form()->password
+            : null;
+        if (is_null($username) || is_null($password)) {
+            $this->engine()->route()->call('400');
+        }
+
+        $username = filter_var(trim($username), FILTER_SANITIZE_STRING);
+        $password = filter_var(trim($password), FILTER_SANITIZE_STRING);
+
+        $user = new User($this->engine());
+        $userId = $user->login($username, $password);
+        if (is_null($userId)) {
+            $this->engine()->route()->call('401');
+        }
+
+        if (is_null($user->fromId($userId))) {
+            logError(
+                sprintf(
+                    'Authentificate: Unable to load user id:%d.',
+                    $userId
+                ),
+                __FILE__,
+                __LINE__
+            );
+
+            $this->engine()->route()->call('500');
+        }
+
+        if ($user->active != 1) {
+            $this->engine()->route()->call('403');
+        }
+
+        $token = $user->updateToken();
+        if (is_null($token)) {
+            logError(
+                sprintf(
+                    'Authentificate: Token not updated for user id:%d.',
+                    $userId
+                ),
+                __FILE__,
+                __LINE__
+            );
+
+            $this->engine()->route()->call('500');
+        }
+
+        // share the cookie for future use
+        header("Authorization: Bearer $token");     # http authorization header for api
+        $_SESSION['JWT_TOKEN'] = $token;            # session cookie for web app
+
+        if (Env::get('APP_TYPE') == 'web') {
+            // it's a web app
+            $this->engine()->template()->render(
+                'auth/authentificated',
+                [
+                    'user'      => $user,
+                ]
+            );
+        }
+
+        if (Env::get('APP_TYPE') == 'api') {
+            // it's an api
+            sendJSON(
+                [
+                    'userId'    => $userId,
+                ],
+                $token
+            );
+        }
+    }
+}

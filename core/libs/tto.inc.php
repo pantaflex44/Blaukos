@@ -1,29 +1,37 @@
 <?php
 
 /**
- * KuntoManager - Logiciel de gestion de salles de sports
+ * Blaukos - PHP Micro Framework
+ * 
+ * MIT License
+ * 
  * Copyright (C) 2021 Christophe LEMOINE
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 namespace Core\Libs;
 
+use Core\Engine;
 use Exception;
 use InvalidArgumentException;
 use PDO;
-use PDOStatement;
 
 /**
  * Manage settings
@@ -31,18 +39,46 @@ use PDOStatement;
 class Tto
 {
 
+    private Engine $_engine;
     private string $_tableName;
     private array $_olds = [];
     private array $_fields = [];
+
+    /**
+     * Allow to share the engine with models
+     *
+     * @return Engine
+     */
+    protected function engine(): Engine
+    {
+        return $this->_engine;
+    }
 
     /**
      * The constructor
      *
      * @param string $tableName Table name
      */
-    public function __construct(string $tableName)
+    public function __construct(Engine $engine, string $tableName, ?int $id = null)
     {
+        $this->_engine = $engine;
         $this->_tableName = $tableName;
+
+        if (!is_null($id)) {
+            if (is_null($this->fromId($id))) {
+                logError(
+                    sprintf(
+                        "Object with id:%d not found in table '%s'",
+                        $id,
+                        $this->_tableName
+                    ),
+                    __FILE__,
+                    __LINE__
+                );
+
+                $this->engine()->route()->call('500');
+            }
+        }
     }
 
     /**
@@ -54,7 +90,7 @@ class Tto
     public function __get(string $name)
     {
         if (array_key_exists($name, $this->_fields)) {
-            return $this->_fields;
+            return $this->_fields[$name];
         }
 
         throw (new InvalidArgumentException("Bad property name: $name"));
@@ -169,13 +205,12 @@ class Tto
      * @param array $params Array of parameters (eg: [['id', 1, PDO::PARAM_INT], ['name', 'bob', PDO::PARAM_STR]])
      * @return array|mixed Return value or null if error
      */
-    protected function fetch(string $query, array $params = []): ?array
+    public function fetch(string $query, array $params = []): ?array
     {
         try {
             $conn = $this->_engine->db()->connection();
 
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':tableName', $this->_tableName, PDO::PARAM_STR);
+            $stmt = $conn->prepare(str_replace(':tableName', $this->_tableName, $query));
 
             foreach ($params as $param) {
                 if (count($param) != 3) {
@@ -196,18 +231,101 @@ class Tto
 
             return $result;
         } catch (Exception $ex) {
-            if (Env::get('APP_DEBUG', 'true') == 'true') {
-                $errorMessage = sprintf(
-                    '[%s] Table To Object, fetch error: %s {file: %s at line %d}',
-                    Env::get('APP_NAME'),
-                    $ex->getMessage(),
-                    __FILE__,
-                    __LINE__
-                );
-                error_log($errorMessage, 0);
-            }
+            logError(
+                sprintf(
+                    'Table To Object, fetch error: %s',
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
 
             return null;
         }
+    }
+
+    /**
+     * Insert datas
+     *
+     * @param string $query SQL Query to insert (eg: INSERT INTO :tableName (col1, col2, col3) VALUES (:value1, :value2, :value3))
+     * @param array $params Array of parameters (eg: [['id', 1, PDO::PARAM_INT], ['name', 'bob', PDO::PARAM_STR]])
+     * @return int|mixed Inserted id or null if error
+     */
+    public function execute(string $query, array $params = []): ?int
+    {
+        try {
+            $conn = $this->_engine->db()->connection();
+
+            $stmt = $conn->prepare(str_replace(':tableName', $this->_tableName, $query));
+
+            foreach ($params as $param) {
+                if (count($param) != 3) {
+                    continue;
+                }
+
+                $stmt->bindValue(':' . $param[0], $param[1], $param[2]);
+            }
+
+            if (!$stmt->execute()) {
+                return null;
+            }
+
+            // if is a insert query, return the row id
+            $id = $conn->lastInsertId();
+
+            // if is an update query, only rowCount availlable
+            if ($id < 1) {
+                $id = $stmt->rowCount();
+            }
+
+            return $id;
+        } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Table To Object, insert or update error: %s',
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
+            return null;
+        }
+    }
+
+    /**
+     * Load an item by Id
+     *
+     * @param integer $id Id of the item
+     * @return Tto|null
+     */
+    public function fromId(int $id): ?Tto
+    {
+        $result = $this->fetch(
+            "SELECT * FROM :tableName WHERE id = :id LIMIT 1",
+            [
+                ['id', $id, PDO::PARAM_INT],
+            ]
+        );
+
+        if (is_null($result) || !is_array($result) || count($result) == 0) {
+            return null;
+        }
+
+        return $this->populate($result);
+    }
+
+    /**
+     * Reload items
+     *
+     * @return Tto|null
+     */
+    public function reload(): ?Tto
+    {
+        if (!isset($this->id)) {
+            return $this;
+        }
+
+        return $this->fromId($this->id);
     }
 }

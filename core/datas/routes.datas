@@ -1,1 +1,0 @@
-a:2:{i:404;a:3:{s:6:"method";s:3:"GET";s:3:"uri";s:4:"/404";s:8:"callback";a:2:{i:0;s:33:"Core\Controllers\ErrorsController";i:1;s:8:"error404";}}s:4:"home";a:3:{s:6:"method";s:3:"GET";s:3:"uri";s:1:"/";s:8:"callback";a:2:{i:0;s:31:"Core\Controllers\HomeController";i:1;s:5:"index";}}}

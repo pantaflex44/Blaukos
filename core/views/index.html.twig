@@ -1,0 +1,13 @@
+{% set title = "Mon tableau de bord"|_ %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+
+    <main class="container-fluid py-5">
+        <p>Dashboard role {{ user.role }}</p>
+        <p>Bonjour {{ user.displayName }}</p>
+    </main>
+
+    {% include 'footer.html.twig' %}
+{% endblock body %}

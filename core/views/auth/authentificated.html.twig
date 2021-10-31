@@ -1,0 +1,40 @@
+{% set title = "Authentification réussie"|_ %}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+
+    <main class="py-5">
+        <div class="card mx-auto" style="width: 90%; max-width: 30rem;">
+            <div class="card-header">
+                <div class="d-flex flex-row gap-2 align-items-center">
+                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                    {{ "Authentification réussie!"|_ }}
+                </div>
+            </div>
+            <div class="card-body mx-sm-4 my-3">
+                <p>
+                    {{ "Dans quelques secondes vous allez être redirigé vers votre tableau de bord."|_ }}
+                </p>
+                <p>
+                    {{ "Veuillez patienter SVP..."|_ }}
+                </p>
+            </div>
+            <div class="card-footer py-3">
+                <div class="d-flex flex-row gap-2 justify-content-end">
+                    <a class="btn btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "accueil"|_ }}</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {% include 'footer.html.twig' %}
+
+    <script>
+        setTimeout(
+            function() {
+                window.location.href = '/'; 
+            }, 2000
+        );
+    </script>
+{% endblock body %}

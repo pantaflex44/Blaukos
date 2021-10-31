@@ -4,3 +4,4 @@ access.log
 core/views/cache/*
 blaukos.localhost-key.pem
 blaukos.localhost.pem
+core/datas/routes.datas

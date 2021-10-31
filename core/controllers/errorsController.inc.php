@@ -1,21 +1,29 @@
 <?php
 
 /**
- * KuntoManager - Logiciel de gestion de salles de sports
+ * Blaukos - PHP Micro Framework
+ * 
+ * MIT License
+ * 
  * Copyright (C) 2021 Christophe LEMOINE
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 namespace Core\Controllers;
@@ -31,6 +39,26 @@ class ErrorsController extends Controller
 {
 
     /**
+     * Controller: error 500
+     *
+     * @route '500' 'GET' '/500'
+     * @return void
+     */
+    public function error500()
+    {
+        $this->engine()->template()->render(
+            'httpError',
+            [
+                'code' => 500,
+                'message' => _("erreur serveur"),
+                'info' => _("Houston, on a un problème!"),
+            ]
+        );
+
+        abort(500);
+    }
+
+    /**
      * Controller: error 404
      *
      * @route '404' 'GET' '/404'
@@ -38,8 +66,75 @@ class ErrorsController extends Controller
      */
     public function error404()
     {
-        $this->engine()->template()->render('404');
+        $this->engine()->template()->render(
+            'httpError',
+            [
+                'code' => 404,
+                'message' => _("page non trouvée"),
+                'info' => _("Mais où vas-tu?"),
+            ]
+        );
 
         abort(404);
+    }
+
+    /**
+     * Controller: error 403
+     *
+     * @route '403' 'GET' '/403'
+     * @return void
+     */
+    public function error403()
+    {
+        $this->engine()->template()->render(
+            'httpError',
+            [
+                'code' => 403,
+                'message' => _("accès refusé"),
+                'info' => _("Papier d'identité s'il vous plait!"),
+            ]
+        );
+
+        abort(403);
+    }
+
+    /**
+     * Controller: error 401
+     *
+     * @route '401' 'GET' '/401'
+     * @return void
+     */
+    public function error401()
+    {
+        $this->engine()->template()->render(
+            'httpError',
+            [
+                'code' => 401,
+                'message' => _("utilisateur non authentifié"),
+                'info' => _("Dans 200m, au rond point, faites demi-tour."),
+            ]
+        );
+
+        abort(401);
+    }
+
+    /**
+     * Controller: error 400
+     *
+     * @route '400' 'GET' '/400'
+     * @return void
+     */
+    public function error400()
+    {
+        $this->engine()->template()->render(
+            'httpError',
+            [
+                'code' => 400,
+                'message' => _("requète erronée"),
+                'info' => _("Mais qu'as tu fait Maurice?"),
+            ]
+        );
+
+        abort(400);
     }
 }
