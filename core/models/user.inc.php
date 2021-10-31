@@ -32,21 +32,14 @@ use Core\Engine;
 use Core\Libs\Tto;
 use PDO;
 
-use function Core\Libs\abort;
 use function Core\Libs\jwtToken;
-use function Core\Libs\logError;
-use function Core\Libs\password;
-use function Core\Libs\password_compare;
+use function Core\Libs\passwordCompare;
 
 /**
  * An user object
- * 
- * 
- * 
  */
 class User extends Tto
 {
-
     /**
      * The constructor
      * 
@@ -54,7 +47,29 @@ class User extends Tto
      */
     public function __construct(Engine $engine, ?int $id = null)
     {
-        parent::__construct($engine, 'users', $id);
+        $default = [
+            'id'            => -1,
+            'token'         => '',
+            'active'        => 1,
+            'username'      => '',
+            'password'      => '',
+            'displayName'   => _("Invité"),
+            'email'         => '',
+            'createdAt'     => '1970-01-01 00:00:00',
+            'role'          => 0,
+        ];
+
+        parent::__construct($engine, 'users', $default, $id);
+    }
+
+    /**
+     * Is it a guest user?
+     *
+     * @return boolean true, user is a guest user, else, false
+     */
+    public function isGuest(): bool
+    {
+        return ($this->id == -1);
     }
 
     /**
@@ -77,7 +92,7 @@ class User extends Tto
             return null;
         }
 
-        if (!password_compare($password, $result['password'])) {
+        if (!passwordCompare($password, $result['password'])) {
             return null;
         }
 
@@ -91,7 +106,7 @@ class User extends Tto
      */
     public function updateToken(?string $token = null): ?string
     {
-        if (!isset($this->id)) {
+        if (!isset($this->id) || $this->id == -1) {
             return null;
         }
 
@@ -122,7 +137,7 @@ class User extends Tto
      */
     public function clearToken(): bool
     {
-        if (!isset($this->id)) {
+        if (!isset($this->id) || $this->id == -1) {
             return false;
         }
 

@@ -30,8 +30,9 @@ namespace Core\Controllers;
 
 use Core\Libs\Controller;
 use Core\Libs\Env;
+use Core\Models\User;
 
-use function Core\Libs\isAuth;
+use function Core\Libs\auth;
 
 /**
  * Controllers group to manage dashboard pages
@@ -47,24 +48,18 @@ class DashboardController extends Controller
      */
     public function dashboard()
     {
-        $user = isAuth($this->engine());
-        if (is_null($user)) {
-            $this->engine()->route()->call('403');
-        }
-
         if (Env::get('APP_TYPE') == 'api') {
             // it's an api
             $this->engine()->route()->call('404');
         }
 
+        if ($this->engine()->user()->isGuest()) {
+            $this->engine()->route()->call('403');
+        }
+
         if (Env::get('APP_TYPE') == 'web') {
             // it's a web app
-            $this->engine()->template()->render(
-                'dashboard/dashboard',
-                [
-                    'user' => $user,
-                ]
-            );
+            $this->engine()->template()->render('dashboard/dashboard');
         }
     }
 }

@@ -32,6 +32,9 @@ use Core\Engine;
 use Core\Models\User;
 use DateTimeImmutable;
 use Exception;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
 
 /**
  * Auto import class
@@ -255,7 +258,7 @@ function sha256(string $text): string
  * @param string $hash A hashed text
  * @return boolean true, it's same, else, false
  */
-function sha256_compare(string $original, string $hash): bool
+function sha256Compare(string $original, string $hash): bool
 {
     return ($hash === sha256($original));
 }
@@ -278,9 +281,45 @@ function password(string $original): string
  * @param string $hash A hashed password
  * @return boolean true, it's same, else, false
  */
-function password_compare(string $original, string $hash): bool
+function passwordCompare(string $original, string $hash): bool
 {
     return password_verify($original, $hash);
+}
+
+/**
+ * Recursive files search with specified pattern
+ *
+ * @param string $folder Initial folder
+ * @param string $pattern Pattern to search
+ * @return array List of files found
+ */
+function globr(string $folder, string $pattern, bool $flat = false, bool $fullpath = true): array
+{
+    $dir = new RecursiveDirectoryIterator($folder);
+    $ite = new RecursiveIteratorIterator($dir);
+    $files = new RegexIterator($ite, $pattern, RegexIterator::GET_MATCH);
+
+    if (!$flat) {
+        $fullpath = false;
+    }
+
+    $fileList = [];
+    foreach ($files as $file) {
+        $d = dirname($file[0]);
+        $f = basename($file[0]);
+
+        if (!$flat) {
+            if (!array_key_exists($d, $fileList)) {
+                $fileList[$d] = [];
+            }
+
+            $fileList[$d][] = $fullpath ? $file[0] : $f;
+        } else {
+            $fileList[] = $fullpath ? $file[0] : $f;
+        }
+    }
+
+    return $fileList;
 }
 
 /**
@@ -458,11 +497,11 @@ function jwtToken(int $userId): string
 }
 
 /**
- * Verify the JWT token
+ * Verify the JWT token and get the related user
  *
  * @return boolean
  */
-function isAuth(Engine $engine): ?User
+function auth(Engine $engine): ?User
 {
     $secretKey = Env::get('APP_TOKEN', null);
     if (is_null($secretKey)) {

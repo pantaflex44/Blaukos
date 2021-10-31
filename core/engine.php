@@ -28,6 +28,7 @@
 
 namespace Core;
 
+use Core\Libs\Annotations;
 use Core\Libs\Env;
 use Core\Libs\Database;
 use Core\Libs\Form;
@@ -36,7 +37,9 @@ use Core\Libs\Route;
 use Core\Libs\Settings;
 use Core\Libs\Template;
 use Core\Libs\Translation;
+use Core\Models\User;
 
+use function Core\Libs\auth;
 use function Core\Libs\autoImport;
 use function Core\Libs\initSession;
 use function Core\Libs\startSession;
@@ -72,6 +75,7 @@ class Engine
     private Form $_form;
     private Template $_template;
     private Translation $_translation;
+    private ?User $_user;
 
     /**
      * Return the database manager
@@ -124,6 +128,16 @@ class Engine
     }
 
     /**
+     * Current user
+     *
+     * @return User
+     */
+    public function user(): User
+    {
+        return $this->_user;
+    }
+
+    /**
      * The constructor
      */
     public function __construct()
@@ -152,6 +166,15 @@ class Engine
 
         // load the template manager
         $this->_template = new Template($this);
+
+        // scan all controller's annotations
+        Annotations::scan($this);
+
+        // load the current user
+        $this->_user = auth($this);
+        if (is_null($this->_user)) {
+            $this->_user = new User($this);
+        }
     }
 
     /**

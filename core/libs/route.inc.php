@@ -29,9 +29,8 @@
 namespace Core\Libs;
 
 use Core\Engine;
+use Core\Models\User;
 use Exception;
-use ReflectionClass;
-use ReflectionMethod;
 
 use function Core\Libs\uritoarray;
 
@@ -47,6 +46,37 @@ class Route
     private string $_method = 'GET';
     private array $_uri = [];
     private array $_routes = [];
+
+    /**
+     * Compute annotation found by Annotation system
+     *
+     * @param string $className
+     * @param string $methodName
+     * @param array $matches
+     * @return void
+     */
+    public function computeAnnotation(string $className, string $methodName, array $matches): void
+    {
+        if (count($matches) != 4) {
+            return;
+        }
+
+        for ($i = 0; $i < count($matches[0]); $i++) {
+            $routeName = $matches[1][$i];
+            $routeMethod = $matches[2][$i];
+            $routeUri = $matches[3][$i];
+            $routeCallback = [$className, $methodName];
+
+            $this->add(
+                $routeName,
+                $routeMethod,
+                $routeUri,
+                $routeCallback
+            );
+        }
+
+        $this->_save();
+    }
 
     /**
      * Call a method from a conttoller with params
@@ -68,62 +98,6 @@ class Route
             );
 
             $this->call('500');
-        }
-    }
-
-    /**
-     * Scan declared controllers to auto add routes from methods comment
-     *
-     * @return void
-     */
-    private function _scan()
-    {
-        $ctrlFiles = glob(__DIR__ . '/../{,*/,*/*/,*/*/*/,*/*/*/*/}*Controller.inc.php', GLOB_BRACE);
-
-        foreach ($ctrlFiles as $file) {
-            if (preg_match('/(.*)\/(.+)\.inc\.php/', $file, $match)) {
-                if (!is_array($match) || count($match) != 3) {
-                    continue;
-                }
-
-                $className = '\\Core\\Controllers\\' . ucfirst($match[2]);
-                $cls = new ReflectionClass($className);
-                if (!$cls->isSubclassOf('\\Core\\Libs\\Controller')) {
-                    continue;
-                }
-
-                $methods = $cls->getMethods(ReflectionMethod::IS_PUBLIC);
-                foreach ($methods as $method) {
-                    $doc = $method->getDocComment();
-                    if ($doc === false) {
-                        continue;
-                    }
-
-                    if (preg_match_all('/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/', $doc, $matches)) {
-                        if (!is_array($matches) || count($matches) != 4) {
-                            continue;
-                        }
-
-                        for ($i = 0; $i < count($matches[0]); $i++) {
-                            $routeName = $matches[1][$i];
-                            $routeMethod = $matches[2][$i];
-                            $routeUri = $matches[3][$i];
-                            $routeCallback = [$className, $method->name];
-
-                            $this->add(
-                                $routeName,
-                                $routeMethod,
-                                $routeUri,
-                                $routeCallback
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
-        if (Env::get('APP_USECACHE', 'false') == 'true') {
-            $this->_save();
         }
     }
 
@@ -201,12 +175,8 @@ class Route
             : '/';
         $this->_uri = uriToArray($uri);
 
-        $cacheLoaded = false;
         if (Env::get('APP_USECACHE', 'false') == 'true') {
-            $cacheLoaded = $this->_load();
-        }
-        if (!$cacheLoaded) {
-            $this->_scan();
+            $this->_load();
         }
     }
 
@@ -409,6 +379,6 @@ class Route
     {
         $this->purge();
 
-        $this->_scan();
+        Annotations::scan($this->_engine);
     }
 }

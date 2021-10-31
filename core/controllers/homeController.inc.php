@@ -33,7 +33,7 @@ use Core\Libs\Env;
 use Core\Models\User;
 use PDO;
 
-use function Core\Libs\isAuth;
+use function Core\Libs\auth;
 use function Core\Libs\sendJSON;
 
 /**
@@ -50,8 +50,6 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $user = isAuth($this->engine());
-
         if (Env::get('APP_TYPE') == 'api') {
             // it's an api
             $this->engine()->route()->call('404');
@@ -59,15 +57,7 @@ class HomeController extends Controller
 
         if (Env::get('APP_TYPE') == 'web') {
             // it's a web app
-            $params = [];
-            if (!is_null($user)) {
-                $params['user'] = $user;
-            }
-
-            $this->engine()->template()->render(
-                'index',
-                $params
-            );
+            $this->engine()->template()->render('index');
         }
     }
 }

@@ -40,7 +40,7 @@ SOFTWARE.
                 <span class="navbar-text small me-sm-3 d-sm-none d-md-block">
                     <small>{{ env('APP_SLOGAN') }}</small>
                 </span>
-                {% if user is defined %}
+                {% if not user.isGuest() %}
                 <div class="navbar-nav">
                     <a class="nav-link active" aria-current="page" href="#">Home</a>
                     <a class="nav-link" href="#">Features</a>
@@ -49,7 +49,7 @@ SOFTWARE.
                 </div>
                 {% endif %}
                 <div class="navbar-nav">
-                    {% if user is defined %}
+                    {% if not user.isGuest() %}
                     <a class="btn btn-outline-danger btn-sm mt-3 mt-sm-0" href="{{ route('logout') }}">{{ "Déconnexion"|_ }}</a>
                     {% elseif templateName != 'login' %}
                     <a class="btn btn-outline-secondary btn-sm mt-3 mt-sm-0" href="{{ route('login') }}">{{ "Connexion"|_ }}</a>  

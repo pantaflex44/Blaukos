@@ -32,7 +32,7 @@ use Core\Libs\Controller;
 use Core\Libs\Env;
 use Core\Models\User;
 
-use function Core\Libs\isAuth;
+use function Core\Libs\auth;
 use function Core\Libs\logError;
 use function Core\Libs\sendJSON;
 
@@ -51,17 +51,17 @@ class AuthController extends Controller
      */
     public function login()
     {
-        $user = isAuth($this->engine());
-        if (!is_null($user)) {
-            $this->engine()->route()->call('400');
-        }
-
         if (Env::get('APP_TYPE') == 'api') {
             // it's an api
             $this->engine()->route()->call('404');
         }
 
+        if (!$this->engine()->user()->isGuest()) {
+            $this->engine()->route()->call('400');
+        }
+
         if (Env::get('APP_TYPE') == 'web') {
+
             // it's a web app
             $formId = $this->engine()->form()->createRandomFormId();
             $csrfField = $this->engine()->form()->csrfHiddenInput($formId);
@@ -86,12 +86,11 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        $user = isAuth($this->engine());
-        if (is_null($user)) {
-            $this->engine()->route()->call('400');
+        if ($this->engine()->user()->isGuest()) {
+            $this->engine()->route()->call('403');
         }
 
-        $user->clearToken();
+        $this->engine()->user()->clearToken();
 
         if (Env::get('APP_TYPE') == 'api') {
             // it's an api
@@ -181,6 +180,7 @@ class AuthController extends Controller
                 'auth/authentificated',
                 [
                     'user'      => $user,
+                    'action'    => 'home',
                 ]
             );
         }

@@ -94,11 +94,12 @@ class Template
             $name . '.html.twig',
             array_merge(
                 [
-                    'templateName' => $templateName,
-                    'locale' => $this->_engine->tr()->getCurrent(),
-                    'lang' => $this->_engine->tr()->getLanguageCode(),
-                    'dir' => Settings::get('html_dir', 'ltr'),
-                    'charset' => Settings::get('charset', 'UTF-8'),
+                    'user'              => $this->_engine->user(),
+                    'templateName'      => $templateName,
+                    'locale'            => $this->_engine->tr()->getCurrent(),
+                    'lang'              => $this->_engine->tr()->getLanguageCode(),
+                    'dir'               => Settings::get('html_dir', 'ltr'),
+                    'charset'           => Settings::get('charset', 'UTF-8'),
                 ],
                 $params
             )

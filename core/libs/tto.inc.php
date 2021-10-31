@@ -43,6 +43,7 @@ class Tto
     private string $_tableName;
     private array $_olds = [];
     private array $_fields = [];
+    private array $_defaults = [];
 
     /**
      * Allow to share the engine with models
@@ -59,10 +60,13 @@ class Tto
      *
      * @param string $tableName Table name
      */
-    public function __construct(Engine $engine, string $tableName, ?int $id = null)
+    public function __construct(Engine $engine, string $tableName, array $defaults, ?int $id = null)
     {
         $this->_engine = $engine;
         $this->_tableName = $tableName;
+
+        $this->_defaults = $defaults;
+        $this->fields($this->_defaults);
 
         if (!is_null($id)) {
             if (is_null($this->fromId($id))) {
@@ -140,8 +144,12 @@ class Tto
      *
      * @return array Array of fields
      */
-    public function fields(): array
+    public function fields(?array $defaults = null): array
     {
+        if (!is_null($defaults)) {
+            $this->_fields = $defaults;
+        }
+
         return $this->_fields;
     }
 
@@ -183,19 +191,6 @@ class Tto
         }
 
         return $this;
-    }
-
-    /**
-     * Clone an object with this
-     *
-     * @param Tto $ttoObject Object to clone
-     * @return Tto
-     */
-    public function clone(Tto $ttoObject): Tto
-    {
-        $this->_fields = [];
-
-        return $this->copy($ttoObject);
     }
 
     /**
@@ -322,7 +317,7 @@ class Tto
      */
     public function reload(): ?Tto
     {
-        if (!isset($this->id)) {
+        if (!isset($this->id) || $this->id == -1) {
             return $this;
         }
 
