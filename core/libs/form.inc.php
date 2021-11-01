@@ -124,16 +124,16 @@ class Form
      * Create a CSRF token
      *
      * @param string $formId An unique form Id
-     * @return string The token
+     * @return array The token
      */
-    public function csrfCreate(string $formId = ''): string
+    public function csrfCreate(string $formId = ''): array
     {
         $key = sprintf('%s_csrf', $formId);
         $csrfToken = md5(uniqid(mt_rand(), true));
 
         $_SESSION[$key] = $csrfToken;
 
-        return $csrfToken;
+        return ['csrfKey' => $key, 'csrfToken' => $csrfToken];
     }
 
     /**
@@ -150,7 +150,7 @@ class Form
             }
         }));
         if (count($keys) != 1) {
-            header('location: /500');
+            header('location: /400');
             exit;
         }
 
@@ -177,11 +177,11 @@ class Form
      */
     public function csrfHiddenInput(string $formId = ''): string
     {
-        $csrfToken = $this->csrfCreate($formId);
+        $csrf = $this->csrfCreate($formId);
         return sprintf(
-            '<input type="hidden" name="%s_csrf" value="%s">',
-            $formId,
-            $csrfToken
+            '<input type="hidden" name="%s" value="%s">',
+            $csrf['csrfKey'],
+            $csrf['csrfToken']
         );
     }
 }

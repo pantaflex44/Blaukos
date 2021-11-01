@@ -42,7 +42,7 @@ class Annotations
      * Scan rules
      */
     private const SCAN_FOR = [
-        '/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/' => [
+        '/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/' => [
             'engine' => 'route',
             'computeMethod' => 'computeAnnotation'
         ],

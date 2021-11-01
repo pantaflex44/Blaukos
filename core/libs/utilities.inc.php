@@ -105,6 +105,10 @@ function endsWith(string $haystack, string $needle): bool
  */
 function abort(int $code)
 {
+    if ($code == 400 || $code == 500) {
+        logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
+    }
+
     $appType = Env::get('APP_TYPE', 'web');
 
     if ($appType == 'api') {
@@ -330,15 +334,44 @@ function globr(string $folder, string $pattern, bool $flat = false, bool $fullpa
  */
 function logError(string $message, string $filename = __FILE__, int $line = __LINE__): void
 {
-    if (Env::get('APP_DEBUG', 'true') == 'true') {
+    if (Env::get('APP_LOG_ERRORS', 'true') == 'true') {
         $errorMessage = sprintf(
             '[%s] %s {file: %s at line %d}',
             Env::get('APP_NAME'),
             $message,
-            $filename,
+            basename($filename),
             $line
         );
         error_log($errorMessage, 0);
+    }
+}
+
+/**
+ * Log an http error
+ *
+ * @param array $backtrace Debug backtrace
+ * @param int $code Http error code
+ * @return void
+ */
+function logHttpError(array $backtrace, int $code, string $filename = __FILE__, int $line = __LINE__): void
+{
+    if (Env::get('APP_LOG_HTTP_ERRORS', 'true') == 'true') {
+        if (count($backtrace) > 0) {
+            $trace = $backtrace[1];
+
+            logError(
+                sprintf(
+                    "[http error %d] Aborted from [%s, %s] in file (%s, %s)",
+                    $code,
+                    isset($trace['class']) ? $trace['class'] : '?',
+                    isset($trace['function']) ? $trace['function'] : '?',
+                    isset($trace['file']) ? basename($trace['file']) : '?',
+                    isset($trace['line']) ? $trace['line'] : '0'
+                ),
+                $filename,
+                $line
+            );
+        }
     }
 }
 

@@ -43,7 +43,7 @@ class DashboardController extends Controller
     /**
      * Controller: dashboard
      *
-     * @route 'dashboard' 'GET' '/dashboard'
+     * @route 'dashboard' 'web' 'GET' '/dashboard'
      * @return void
      */
     public function dashboard()

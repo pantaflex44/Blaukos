@@ -57,18 +57,20 @@ class Route
      */
     public function computeAnnotation(string $className, string $methodName, array $matches): void
     {
-        if (count($matches) != 4) {
+        if (count($matches) != 5) {
             return;
         }
 
         for ($i = 0; $i < count($matches[0]); $i++) {
             $routeName = $matches[1][$i];
-            $routeMethod = $matches[2][$i];
-            $routeUri = $matches[3][$i];
+            $routeType = $matches[2][$i];
+            $routeMethod = $matches[3][$i];
+            $routeUri = $matches[4][$i];
             $routeCallback = [$className, $methodName];
 
             $this->add(
                 $routeName,
+                $routeType,
                 $routeMethod,
                 $routeUri,
                 $routeCallback
@@ -85,9 +87,11 @@ class Route
      * @param array $params Array of callback parameters
      * @return void
      */
-    private function _call(callable $callback, array $params = [])
+    private function _call(callable $callback, array $params = []): bool
     {
-        if (call_user_func_array($callback, $params) === false) {
+        $success = (call_user_func_array($callback, $params) === false) ? false : true;
+
+        if (!$success) {
             logError(
                 sprintf(
                     'Route callback error: %s',
@@ -99,6 +103,8 @@ class Route
 
             $this->call('500');
         }
+
+        return $success;
     }
 
     /**
@@ -136,7 +142,10 @@ class Route
      */
     private function _load(): bool
     {
-        if (!file_exists(self::FILE)) {
+        if (
+            !file_exists(self::FILE)
+            || Env::get('APP_USECACHE', 'false') != 'true'
+        ) {
             return false;
         }
 
@@ -150,7 +159,7 @@ class Route
 
             $this->_routes = [];
             foreach ($routes as $name => $route) {
-                $this->add($name, $route['method'], $route['uri'], $route['callback']);
+                $this->add($name, $route['type'], $route['method'], $route['uri'], $route['callback']);
             }
 
             return true;
@@ -175,22 +184,25 @@ class Route
             : '/';
         $this->_uri = uriToArray($uri);
 
-        if (Env::get('APP_USECACHE', 'false') == 'true') {
-            $this->_load();
-        }
+        $this->_load();
     }
 
     /**
      * Add new route condition
      *
      * @param string $name Route name
+     * @param string $type Allowed application types (eg: 'web', 'api', 'web,api')
      * @param string $method HTTP method ('GET', 'POST', 'DELETE', 'PUT')
      * @param string $uri Uri to query start with a / (eg: / | /post/{varname:type}). 'varname' is the varname without the $, type is a php gettype() return value @see https://www.php.net/manual/fr/function.gettype.php 
      * @param array $callback Array of the callable controller (eg: [HomeController::class, 'index'])
      * @return void
      */
-    public function add(string $name, string $method, string $uri, array $callback): bool
+    public function add(string $name, string $type, string $method, string $uri, array $callback): bool
     {
+        if (stripos($type, Env::get('APP_TYPE'), 0) === false) {
+            return false;
+        }
+
         $method = strtoupper(trim($method));
         if ($method != 'GET' && $method != 'POST' && $method != 'DELETE' && $method != 'PUT') {
             return false;
@@ -229,7 +241,7 @@ class Route
     {
         $routes = array_values(array_filter(
             $this->_routes,
-            fn ($route) => $route['method'] == $this->_method && count($route['uri']) == count($this->_uri)
+            fn ($route) => ($route['method'] == $this->_method && count($route['uri']) == count($this->_uri))
         ));
 
         $callable = false;
@@ -321,15 +333,20 @@ class Route
      * @param array $params Params to fill, optionnal
      * @return void
      */
-    public function call(string $name, array $params = [])
+    public function call(string $name, array $params = []): bool
     {
         $name = makeSlug($name);
 
         if (!array_key_exists($name, $this->_routes)) {
-            return;
+            $code = intval($name);
+            if ($code != 0) {
+                abort($code);
+            }
+
+            return false;
         }
 
-        $this->_call($this->_routes[$name]['callback'], $params);
+        return $this->_call($this->_routes[$name]['callback'], $params);
     }
 
     /**

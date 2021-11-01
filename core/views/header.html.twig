@@ -40,21 +40,32 @@ SOFTWARE.
                 <span class="navbar-text small me-sm-3 d-sm-none d-md-block">
                     <small>{{ env('APP_SLOGAN') }}</small>
                 </span>
-                {% if not user.isGuest() %}
+
+                <!--{% if not user.isGuest() and templateName != 'authentificated' %}
                 <div class="navbar-nav">
                     <a class="nav-link active" aria-current="page" href="#">Home</a>
                     <a class="nav-link" href="#">Features</a>
                     <a class="nav-link" href="#">Pricing</a>
                     <a class="nav-link disabled">Disabled</a>
                 </div>
-                {% endif %}
+                {% endif %}-->
+
+                {% if templateName != 'authentificated' %}
                 <div class="navbar-nav">
                     {% if not user.isGuest() %}
-                    <a class="btn btn-outline-danger btn-sm mt-3 mt-sm-0" href="{{ route('logout') }}">{{ "Déconnexion"|_ }}</a>
-                    {% elseif templateName != 'login' %}
-                    <a class="btn btn-outline-secondary btn-sm mt-3 mt-sm-0" href="{{ route('login') }}">{{ "Connexion"|_ }}</a>  
+                    {% if templateName != 'dashboard' %}
+                    <a class="btn btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('dashboard') }}"><i class="fad fa-tv me-3 me-sm-0"></i><span class="d-inline-block d-sm-none">{{ "Tableau de bord"|_ }}</span></a>  
+                    {% endif %}
+                    {% if templateName != 'index' %}
+                    <a class="btn btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('home') }}"><i class="fad fa-home me-3 me-sm-0"></i><span class="d-inline-block d-sm-none">{{ "Accueil"|_ }}</span></a>  
+                    {% endif %}
+                    <a class="btn btn-outline-danger text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('logout') }}"><i class="fad fa-sign-out-alt me-3 me-sm-0"></i><span class="d-inline-block d-sm-none">{{ "Me déconnecter"|_ }}</span></a>
+                    {% elseif templateName != 'login' and env('ALLOW_PUBLIC_LOGIN') %}
+                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fad fa-sign-in-alt me-3"></i><span class="d-inline-block">{{ "Connexion"|_ }}</span></a>  
                     {% endif %}
                 </div>
+                {% endif %}
+                
             </div>
         </div>
     </nav>

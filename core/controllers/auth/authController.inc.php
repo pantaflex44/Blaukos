@@ -46,48 +46,43 @@ class AuthController extends Controller
      * Controller: login
      * Only for web app, render a login form to authentificate
      *
-     * @route 'login' 'GET' '/login'
+     * @route 'login' 'web' 'GET' '/login'
      * @return void
      */
     public function login()
     {
-        if (Env::get('APP_TYPE') == 'api') {
-            // it's an api
-            $this->engine()->route()->call('404');
+        if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
+            $this->engine()->route()->redirect('404');
         }
 
         if (!$this->engine()->user()->isGuest()) {
             $this->engine()->route()->call('400');
         }
 
-        if (Env::get('APP_TYPE') == 'web') {
+        $formId = $this->engine()->form()->createRandomFormId();
+        $csrfField = $this->engine()->form()->csrfHiddenInput($formId);
 
-            // it's a web app
-            $formId = $this->engine()->form()->createRandomFormId();
-            $csrfField = $this->engine()->form()->csrfHiddenInput($formId);
-
-            $this->engine()->template()->render(
-                'auth/login',
-                [
-                    'formId' => $formId,
-                    'formMethod' => 'POST',
-                    'csrfField' => $csrfField,
-                    'action' => 'authentificate',
-                ]
-            );
-        }
+        $this->engine()->template()->render(
+            'auth/login',
+            [
+                'formId' => $formId,
+                'formMethod' => 'POST',
+                'csrfField' => $csrfField,
+                'action' => 'authentificate',
+            ]
+        );
     }
 
     /**
      * Controller: logout
      *
-     * @route 'logout' 'GET' '/logout'
+     * @route 'logout' 'web,api' 'GET' '/logout'
      * @return void
      */
     public function logout()
     {
         if ($this->engine()->user()->isGuest()) {
-            $this->engine()->route()->call('403');
+            $this->engine()->route()->call('400');
         }
 
         $this->engine()->user()->clearToken();
@@ -108,14 +103,37 @@ class AuthController extends Controller
     }
 
     /**
+     * Controller: csrf
+     * Retreive new CSRF token
+     * 
+     * @route 'csrf' 'api' 'GET' '/authentificate/csrf/{id:string}'
+     * @return void
+     */
+    public function csrf(string $id)
+    {
+        sendJSON($this->engine()->form()->csrfCreate($id));
+    }
+
+    /**
      * Controller: authentificate
      * Authentificate an user from 'username' and 'password' form post value
-     *
-     * @route 'authentificate' 'POST' '/authentificate'
+     * 
+     * In API mode, make before a get request to /authentificate/csrf/{id:string},
+     * where {id:string} is the ID to create the CSRF token key.
+     * eg:
+     *  request      = GET /authentificate/csrf/mykey256
+     *  json result  = {"csrfKey":"mykey256_csrf","csrfToken":"88faac6a39c052fc98a0b680cdfac48e","http":200}
+     *  next request = POST /authentificate (with correct post params, csrf token included)
+     * 
+     * @route 'authentificate' 'web,api' 'POST' '/authentificate'
      * @return void
      */
     public function authentificate()
     {
+        if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
+            $this->engine()->route()->redirect('404');
+        }
+
         if (!$this->engine()->form()->csrfVerify()) {
             $this->engine()->route()->call('400');
         }
@@ -180,7 +198,7 @@ class AuthController extends Controller
                 'auth/authentificated',
                 [
                     'user'      => $user,
-                    'action'    => 'home',
+                    'action'    => 'dashboard',
                 ]
             );
         }

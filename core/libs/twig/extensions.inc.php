@@ -56,7 +56,18 @@ class CustomTwigExtensions extends AbstractExtension
     {
         return [
             new TwigFunction('env', function (string $key, string $default = ''): string {
-                return Env::get($key, $default);
+                $value = Env::get($key, $default);
+
+                switch ($value) {
+                    case 'true':
+                        $value = true;
+                        break;
+                    case 'false':
+                        $value = false;
+                        break;
+                }
+
+                return $value;
             }),
 
             new TwigFunction('settings', function (string $key, $default) {

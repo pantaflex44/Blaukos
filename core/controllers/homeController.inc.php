@@ -45,7 +45,7 @@ class HomeController extends Controller
     /**
      * Controller: index
      *
-     * @route 'home' 'GET' '/'
+     * @route 'home' 'web' 'GET' '/'
      * @return void
      */
     public function index()
