@@ -4,8 +4,9 @@
 {% block body %}
     {% include 'header.html.twig' %}
 
-    <main class="py-5">
-        <p>Tableau de bord de {{ user.displayName }} avec le role {{ user.role }}</p>
+    <main class="container-fluid py-5 small">
+        <p>Tableau de bord de {{ user.displayName|_ }} avec le role {{ enums.roleTitle[user.role]|_ }}</p>
+        <p>Dernière connexion: {{ dLong(user.lastLoggedAt, 'Y-m-d H:i:s')}} à {{ tShort(user.lastLoggedAt, 'Y-m-d H:i:s')}}
     </main>
 
     {% include 'footer.html.twig' %}

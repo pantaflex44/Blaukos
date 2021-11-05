@@ -32,6 +32,7 @@ use Core\Engine;
 use Core\Models\User;
 use DateTimeImmutable;
 use Exception;
+use IntlDateFormatter;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
@@ -130,7 +131,7 @@ function abort(int $code)
  */
 function makeSlug(string $text, string $divider = '-'): string
 {
-    $text = preg_replace('~[^\pL\d]+~u', $divider, $text);
+    $text = preg_replace('~[^\pL\d]+~u', $divider, trim($text));
     $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
     $text = preg_replace('~[^-\w]+~', '', $text);
     $text = trim($text, $divider);
@@ -220,6 +221,64 @@ function baseUrl(): string
     $host = $_SERVER['HTTP_HOST'];
 
     return $protocol . $host;
+}
+
+/**
+ * Convert filepath to full classname
+ *
+ * @param string $filepath The file path
+ * @return string The classname with namespace
+ */
+function filepathToClass(string $filepath): string
+{
+    $f = explode(DIRECTORY_SEPARATOR, dirname($filepath));
+
+    $corePos = array_search('core', $f);
+    if ($corePos === false) {
+        return '\\';
+    }
+
+    $f = array_slice($f, $corePos);
+
+    $indexes = array_keys($f, '.');
+    while (count($indexes) > 0) {
+        $index = array_shift($indexes);
+
+        unset($f[$index]);
+
+        $indexes = array_keys($f, '.');
+    }
+
+    $indexes = array_keys($f, '..');
+    while (count($indexes) > 0) {
+        $index = array_shift($indexes);
+
+        unset($f[$index]);
+        if ($index - 1 > 0) {
+            unset($f[$index - 1]);
+        }
+
+        $indexes = array_keys($f, '..');
+    }
+
+    if (count($f) == 0 || $f[0] != 'core') {
+        return '\\';
+    }
+
+    $f = array_map(fn ($itm) => ucfirst($itm), $f);
+    $ns = '\\' . implode('\\', $f);
+    if (!endsWith($ns, '\\')) {
+        $ns .= '\\';
+    }
+
+    if (preg_match('/(.*)\/(.+)\.inc\.php/', $filepath, $match)) {
+        if (!is_array($match) || count($match) != 3) {
+            return '\\';
+        }
+    }
+    $ns .= ucfirst($match[2]);
+
+    return $ns;
 }
 
 /**
@@ -664,4 +723,24 @@ function auth(Engine $engine): ?User
         $unsetAuth();
         return null;
     }
+}
+
+/**
+ * Convert datetime to locale format
+ *
+ * @param Engine $engine
+ * @param $datetime The datetime to convert
+ * @param [type] $dateType The IntlDateFormatter format for the date
+ * @param [type] $timeType The IntlDateFormatter format for the time
+ * @return string Formatted datetime
+ */
+function dtFormat(Engine $engine, $datetime, int $dateType = IntlDateFormatter::LONG, int $timeType = IntlDateFormatter::LONG): string
+{
+    $fmt = new IntlDateFormatter(
+        $engine->tr()->getCurrent(),
+        $dateType,
+        $timeType
+    );
+
+    return $fmt->format($datetime);
 }

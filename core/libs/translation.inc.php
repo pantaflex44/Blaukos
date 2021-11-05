@@ -57,7 +57,13 @@ class Translation
         if (stripos(PHP_OS, 'win') === 0) {
             putenv("LC_ALL={$this->_currentLocale}");
         } else {
-            setlocale(LC_ALL, $this->_currentLocale . '.utf8');
+            setlocale(LC_TIME, $this->_currentLocale);
+            setlocale(LC_ALL, $this->_currentLocale);
+
+            if (!setlocale(LC_ALL, 0) == 'C') {
+                setlocale(LC_TIME, $this->_currentLocale . '.utf8');
+                setlocale(LC_ALL, $this->_currentLocale . '.utf8');
+            }
         }
 
         $domain = 'messages';

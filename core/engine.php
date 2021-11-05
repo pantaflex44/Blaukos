@@ -161,14 +161,14 @@ class Engine
         // give access to Route manager and load default routes
         $this->_route = new Route($this);
 
+        // scan all controller's annotations
+        Annotations::scan($this);
+
         // give access to Form manager
         $this->_form = new Form($this);
 
         // load the template manager
         $this->_template = new Template($this);
-
-        // scan all controller's annotations
-        Annotations::scan($this);
 
         // load the current user
         $this->_user = auth($this);

@@ -29,6 +29,7 @@
 namespace Core\Libs;
 
 use Core\Engine;
+use Exception;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -42,9 +43,12 @@ class Annotations
      * Scan rules
      */
     private const SCAN_FOR = [
-        '/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/' => [
-            'engine' => 'route',
-            'computeMethod' => 'computeAnnotation'
+        'scanEnums'                 => '/@enum[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/',
+        'scanControllers'           => [
+            '/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/' => [
+                'engine'            => 'route',
+                'computeMethod'     => 'computeAnnotation'
+            ],
         ],
     ];
 
@@ -53,7 +57,91 @@ class Annotations
      *
      * @return void
      */
-    public static function scan(Engine $engine)
+    public static function scan(Engine $engine): void
+    {
+        foreach (self::SCAN_FOR as $method => $rules) {
+            call_user_func('\\Core\\Libs\\Annotations::' . $method, $engine);
+        }
+    }
+
+    /**
+     * Scan look for php enums annotations
+     *
+     * @param Engine $engine
+     * @return void
+     */
+    public static function scanEnums(Engine $engine): void
+    {
+        $filepath = __DIR__ . '/../datas/enums.inc.php';
+
+        $enums = [];
+
+        $ctrlFiles = globr(__DIR__ . '/../', '/^.*.inc.php$/', true);
+        foreach ($ctrlFiles as $file) {
+            try {
+                $cls = new ReflectionClass(filepathToClass($file));
+
+                $doc = $cls->getDocComment();
+                if ($doc === false) {
+                    continue;
+                }
+
+                $regex = self::SCAN_FOR[__FUNCTION__];
+                if (preg_match_all($regex, $doc, $matches)) {
+                    if (!is_array($matches)) {
+                        continue;
+                    }
+
+                    for ($i = 0; $i < count($matches[0]); $i++) {
+                        list($name, $key) = explode(':', (string)$matches[1][$i]);
+
+                        $name = trim($name);
+
+                        $key = trim($key);
+                        if (is_numeric($key)) {
+                            settype($key, 'integer');
+                        }
+
+                        $value = $matches[2][$i];
+
+                        if (!array_key_exists($name, $enums)) {
+                            if ($key == '') {
+                                $enums[$name] = [$key => $value];
+                            } else {
+                                $enums[$name] = $value;
+                            }
+                        } else {
+                            if (
+                                is_array($enums[$name])
+                                && $key != ''
+                            ) {
+                                $enums[$name][$key] = $value;
+                            } elseif (
+                                is_array($enums[$name])
+                                && $key == ''
+                            ) {
+                                $enums[$name][] = $value;
+                            } else {
+                                $enums[$name] = $value;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $ex) {
+                continue;
+            }
+        }
+
+        $GLOBALS['enums'] = (object)$enums;
+    }
+
+    /**
+     * Scan look for php controllers annotations
+     *
+     * @param Engine $engine
+     * @return void
+     */
+    public static function scanControllers(Engine $engine): void
     {
         if (Env::get('APP_USECACHE', 'false') == 'true') {
             return;
@@ -80,7 +168,7 @@ class Annotations
                         continue;
                     }
 
-                    foreach (self::SCAN_FOR as $regex => $callback) {
+                    foreach (self::SCAN_FOR[__FUNCTION__] as $regex => $callback) {
                         if (preg_match_all($regex, $doc, $matches)) {
                             if (!is_array($matches)) {
                                 continue;

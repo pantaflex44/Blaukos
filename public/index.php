@@ -28,12 +28,6 @@
 
 namespace Web;
 
-use Core\Engine;
-
 require_once('../core/engine.php');
 
-// instanciate new engine
-$engine = new Engine();
-
-// map routes to find current uri and link expected controller
-$engine->route()->map();
+(new \Core\Engine())->route()->map();

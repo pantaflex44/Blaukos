@@ -30,6 +30,7 @@ namespace Core\Models;
 
 use Core\Engine;
 use Core\Libs\Tto;
+use DateTimeImmutable;
 use PDO;
 
 use function Core\Libs\jwtToken;
@@ -37,9 +38,29 @@ use function Core\Libs\passwordCompare;
 
 /**
  * An user object
+ * 
+ * @table 'users'
+ * 
+ * @field 'id:integer' '-1'
+ * @field 'token:string' ''
+ * @field 'active:integer' '1'
+ * @field 'username:string' ''
+ * @field 'password:string' ''
+ * @field 'displayName:string' 'visiteur'
+ * @field 'email:string' ''
+ * @field 'createdAt:string' '1970-01-01 00:00:00'
+ * @field 'lastLoggedAt:string' '1970-01-01 00:00:00'
+ * @field 'role:integer' '0'
+ * 
+ * @enum 'roleTitle:0' 'Visiteur'
+ * @enum 'roleTitle:1' 'Abonné'
+ * @enum 'roleTitle:2' 'Gestionnaire'
+ * @enum 'roleTitle:98' 'Administrateur'
+ * @enum 'roleTitle:99' 'Super-Administrateur'
  */
 class User extends Tto
 {
+
     /**
      * The constructor
      * 
@@ -47,19 +68,7 @@ class User extends Tto
      */
     public function __construct(Engine $engine, ?int $id = null)
     {
-        $default = [
-            'id'            => -1,
-            'token'         => '',
-            'active'        => 1,
-            'username'      => '',
-            'password'      => '',
-            'displayName'   => _("Invité"),
-            'email'         => '',
-            'createdAt'     => '1970-01-01 00:00:00',
-            'role'          => 0,
-        ];
-
-        parent::__construct($engine, 'users', $default, $id);
+        parent::__construct($engine, $id);
     }
 
     /**
@@ -95,6 +104,14 @@ class User extends Tto
         if (!passwordCompare($password, $result['password'])) {
             return null;
         }
+
+        $this->execute(
+            "UPDATE :tableName SET lastLoggedAt = :lastLoggedAt WHERE BINARY id = :id",
+            [
+                ['lastLoggedAt', (new DateTimeImmutable())->format('Y-m-d H:i:s'), PDO::PARAM_STR],
+                ['id', $result['id'], PDO::PARAM_INT],
+            ]
+        );
 
         return $result['id'];
     }

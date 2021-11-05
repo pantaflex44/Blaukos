@@ -31,9 +31,14 @@ namespace Core\Libs\Twig;
 use Core\Engine;
 use Core\Libs\Env;
 use Core\Libs\Settings;
+use DateTime;
+use DateTimeImmutable;
+use IntlDateFormatter;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
+
+use function Core\Libs\dtFormat;
 
 class CustomTwigExtensions extends AbstractExtension
 {
@@ -78,6 +83,58 @@ class CustomTwigExtensions extends AbstractExtension
                 return $this->_engine->route()->get($name, $params);
             }),
 
+            new TwigFunction('dtShort', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    IntlDateFormatter::SHORT,
+                    IntlDateFormatter::SHORT
+                );
+            }),
+
+            new TwigFunction('dShort', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    IntlDateFormatter::SHORT,
+                    IntlDateFormatter::NONE
+                );
+            }),
+
+            new TwigFunction('tShort', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    IntlDateFormatter::NONE,
+                    IntlDateFormatter::SHORT
+                );
+            }),
+
+            new TwigFunction('dtLong', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime)
+                );
+            }),
+
+            new TwigFunction('dLong', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    IntlDateFormatter::LONG,
+                    IntlDateFormatter::NONE
+                );
+            }),
+
+            new TwigFunction('tLong', function (string $datetime, string $from): string {
+                return dtFormat(
+                    $this->_engine,
+                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    IntlDateFormatter::NONE,
+                    IntlDateFormatter::LONG
+                );
+            }),
+
             /*new \Twig\TwigFunction('js_path', function () {
                 return dir2url(PARAMS['pathes']['web'] . getTheCaller() . '/js/');
             }),
@@ -101,19 +158,6 @@ class CustomTwigExtensions extends AbstractExtension
             new \Twig\TwigFunction('csrf_field', function (string $formId) {
                 $csrf = newCsrfToken($formId);
                 return '<input type="hidden" id="' . $formId . '-csrf" name="' . $csrf->name . '" value="' . $csrf->token . '">';
-            }),
-
-            new \Twig\TwigFunction('datetime', function (string $datetime, string $from, string $to) {
-                $tsp = strptime($datetime, $from);
-                $ts = mktime(
-                    $tsp['tm_hour'],
-                    $tsp['tm_min'],
-                    $tsp['tm_sec'],
-                    $tsp['tm_mon'] + 1,
-                    $tsp['tm_mday'],
-                    $tsp['tm_year'] + 1900
-                );
-                return strftime($to, $ts);
             }),
 
             new \Twig\TwigFunction('humanDateDiffFromNow', function (string $datetime) {

@@ -32,6 +32,7 @@ use Core\Engine;
 use Exception;
 use InvalidArgumentException;
 use PDO;
+use ReflectionClass;
 
 /**
  * Manage settings
@@ -43,7 +44,7 @@ class Tto
     private string $_tableName;
     private array $_olds = [];
     private array $_fields = [];
-    private array $_defaults = [];
+    private array $_table = [];
 
     /**
      * Allow to share the engine with models
@@ -60,13 +61,13 @@ class Tto
      *
      * @param string $tableName Table name
      */
-    public function __construct(Engine $engine, string $tableName, array $defaults, ?int $id = null)
+    public function __construct(Engine $engine, ?int $id = null)
     {
         $this->_engine = $engine;
-        $this->_tableName = $tableName;
 
-        $this->_defaults = $defaults;
-        $this->fields($this->_defaults);
+        if (!$this->computeAnnotations()) {
+            $this->engine()->template()->render('error500');
+        }
 
         if (!is_null($id)) {
             if (is_null($this->fromId($id))) {
@@ -80,9 +81,78 @@ class Tto
                     __LINE__
                 );
 
-                $this->engine()->route()->call('500');
+                $this->engine()->route()->call('error500');
             }
         }
+    }
+
+    /**
+     * Convert defualt string value to her type
+     *
+     * @param $value Value to convert
+     * @param string $type Type with
+     * @return bool true, it's a valid conversion, else, false
+     */
+    private function setType(&$value, string $type): bool
+    {
+        try {
+            $valid = @settype($value, $type);
+        } catch (Exception $ex) {
+            $valid = false;
+        }
+
+        return $valid;
+    }
+
+    /**
+     * Compute annotations directives
+     *
+     * @return boolean false, error occured, else, true
+     */
+    private function computeAnnotations(): bool
+    {
+        $rc = new ReflectionClass($this);
+
+        $comments = $rc->getDocComment();
+        if ($comments === false) {
+            return false;
+        }
+
+        // get the table name
+        $regex = '/@table[\s\t]+\'(.+)\'/';
+        $found = preg_match($regex, $comments, $matches);
+        if (!$found || !is_array($matches) || count($matches) != 2) {
+            return false;
+        }
+
+        $this->_tableName = $matches[1];
+
+        // get fields and default values
+        $regex = '/@field[\s\t]+\'(.+)\'[\s\t]+\'(.*)\'/';
+        $found = preg_match_all($regex, $comments, $matches);
+        if (!$found || !is_array($matches) || count($matches) != 3 || !is_array($matches[0])) {
+            return false;
+        }
+
+        $this->_fields = [];
+        $items = (array)$matches[0];
+        for ($i = 0; $i < count($items); $i++) {
+            list($key, $type) = explode(':', $matches[1][$i]);
+
+            $key = trim($key);
+            $type = strtolower(trim($type));
+            $default = trim($matches[2][$i]);
+
+            $this->setType($default, $type);
+
+            $this->_fields[$key] = $default;
+        }
+
+        if (count($this->_fields) == 0) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

@@ -89,11 +89,14 @@ class Template
         $names = explode('/', $name);
         $templateName = array_pop($names);
 
+        $enums = isset($GLOBALS['enums']) ? $GLOBALS['enums'] : null;
+
         // else, load and show template page
         $content = $this->twig()->render(
             $name . '.html.twig',
             array_merge(
                 [
+                    'enums'             => $enums,
                     'user'              => $this->_engine->user(),
                     'templateName'      => $templateName,
                     'locale'            => $this->_engine->tr()->getCurrent(),

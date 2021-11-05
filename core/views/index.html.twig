@@ -4,9 +4,10 @@
 {% block body %}
     {% include 'header.html.twig' %}
 
-    <main class="container-fluid py-5">
+    <main class="container-fluid py-5 small">
         <p>Accueil</p>
-        <p>Bonjour {{ user.displayName }} avec le role {{ user.role }}</p>
+        <p>Bonjour {{ user.displayName|_ }} avec le role {{ enums.roleTitle[user.role]|_ }}</p>
+        
     </main>
 
     {% include 'footer.html.twig' %}
