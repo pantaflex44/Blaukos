@@ -29,22 +29,269 @@
 namespace Core\Libs;
 
 use Core\Engine;
+use DateTimeImmutable;
 use Exception;
+use IntlTimeZone;
 use InvalidArgumentException;
 use PDO;
+use PDOStatement;
 use ReflectionClass;
 
 /**
- * Manage settings
+ * Tto - Table To Object
+ * Micro ORM to manage sql tables with auto-incremented `id` field.
+ * Support PHP DocBook annotations for extended objects.
  */
 class Tto
 {
 
     private Engine $_engine;
-    private string $_tableName;
-    private array $_olds = [];
+    private array $_sqlTypes = [];
+    private array $_sqlParamTypes = [];
+    private array $_annotationsRegexes = [];
+
+    private string $_tableName = '';
     private array $_fields = [];
-    private array $_table = [];
+    private array $_defaults = [];
+
+    private array $_query = [];
+    private int $_offset = -1;
+    private int $_limit = -1;
+    private array $_order = [];
+    private array $_assoc = [];
+    private array $_updated = [];
+
+    /**
+     * Initialize parameters
+     *
+     * @return void
+     */
+    private function _initialize(): void
+    {
+        $this->_sqlTypes = [
+            'integer'       => 'INT',
+            'float'         => 'FLOAT',
+            'string'        => 'VARCHAR(255)',
+            'boolean'       => 'TINYINT(1)',
+            'datetime'      => 'DATETIME',
+            'date'          => 'DATE',
+            'time'          => 'TIME',
+        ];
+
+        $this->_sqlParamTypes = [
+            'integer'       => PDO::PARAM_INT,
+            'float'         => PDO::PARAM_INT,
+            'string'        => PDO::PARAM_STR,
+            'boolean'       => PDO::PARAM_INT,
+            'datetime'      => PDO::PARAM_STR,
+            'date'          => PDO::PARAM_STR,
+            'time'          => PDO::PARAM_STR,
+        ];
+
+        $this->_annotationsRegexes = [
+            'table'         => '/@table[\s\t]+(\w+)/',
+            'field'         => '/@field[\s\t]+(\w+):(' . implode('|', array_keys($this->_sqlTypes)) . ')[\s\t]+"(.*)"/',
+        ];
+    }
+
+    /**
+     * Test if type exists
+     *
+     * @param string $type Type to test
+     * @return string|null Sanitized type or null if not exists
+     */
+    private function _typeExists(string $type): ?string
+    {
+        $type = strtolower(trim($type));
+
+        if (array_key_exists($type, $this->_sqlTypes)) {
+            return $type;
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert a value to an allowed type
+     *
+     * @param $value Value to convert
+     * @param string $type Wanted type from allowed type
+     * @return The value converted
+     */
+    private function _convert($value, string $type)
+    {
+        $type = $this->_typeExists($type);
+        if (is_null($type)) {
+            return strval($value);
+        }
+
+        try {
+            switch ($type) {
+                case 'integer':
+                    return intval($value);
+                case 'float':
+                    return floatval($value);
+                case 'string':
+                    return strval($value);
+                case 'boolean':
+                    return (intval($value) == 1) ? true : false;
+                case 'datetime':
+                    return (new DateTimeImmutable())->createFromFormat('Y-m-d H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
+                case 'date':
+                    return (new DateTimeImmutable())->createFromFormat('Y-m-d', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
+                case 'time':
+                    return (new DateTimeImmutable())->createFromFormat('H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
+                default:
+                    return strval($value);
+            }
+        } catch (Exception $ex) {
+            return strval($value);
+        }
+    }
+
+    /**
+     * Convert a value from an allowed type to sql type
+     *
+     * @param $value Value to convert
+     * @param string $type Wanted type from allowed type to sql type
+     * @return The value converted
+     */
+    private function _toSqlType($sqlvalue, string $type)
+    {
+        $type = $this->_typeExists($type);
+        if (is_null($type)) {
+            return strval($sqlvalue);
+        }
+
+        try {
+            switch ($type) {
+                case 'integer':
+                    return intval($sqlvalue);
+                case 'float':
+                    return floatval($sqlvalue);
+                case 'string':
+                    return strval($sqlvalue);
+                case 'boolean':
+                    return $sqlvalue === true ? 1 : 0;
+                case 'datetime':
+                    return $sqlvalue->format('Y-m-d H:i:s');
+                case 'date':
+                    return $sqlvalue->format('Y-m-d');
+                case 'time':
+                    return $sqlvalue->format('H:i:s');
+                default:
+                    return strval($sqlvalue);
+            }
+        } catch (Exception $ex) {
+            return strval($sqlvalue);
+        }
+    }
+
+    /**
+     * Read annotations to define table
+     *
+     * @return boolean true, everything is good, else, false on error
+     */
+    private function _annotationsReader(): bool
+    {
+        $rc = new ReflectionClass($this);
+
+        $comments = $rc->getDocComment();
+        if ($comments === false) {
+            return false;
+        }
+
+        // get the table name
+        $found = preg_match($this->_annotationsRegexes['table'], $comments, $matches);
+        if (!$found || !is_array($matches) || count($matches) != 2 || trim($matches[1]) == '') {
+            return false;
+        }
+
+        $this->_tableName = trim($matches[1]);
+
+        // get fields
+        $this->_updated = [];
+        $this->_fields = [];
+        $this->_defaults = [];
+
+        $found = preg_match_all($this->_annotationsRegexes['field'], $comments, $matches);
+        if (!$found || !is_array($matches) || count($matches) != 4 || !is_array($matches[0])) {
+            return false;
+        }
+
+        for ($i = 0; $i < count((array)$matches[0]); $i++) {
+            $type = $this->_typeExists($matches[2][$i]);
+            if (is_null($type)) {
+                continue;
+            }
+
+            $key = trim($matches[1][$i]);
+            $default = $this->_convert(trim($matches[3][$i]), $type);
+
+            $this->_fields[$key] = ['type' => $type, 'value' => $default];
+            $this->_defaults[$key] = $this->_fields[$key];
+        }
+
+        if (count($this->_fields) == 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Return the SQL param type from a field name
+     *
+     * @param string $fieldName The field name
+     * @return integer The PDO Param type
+     */
+    private function _fieldToSqlParamType(string $name): int
+    {
+        if (!array_key_exists($name, $this->_fields)) {
+            return PDO::PARAM_STR;
+        }
+
+        return $this->_sqlParamTypes[$this->_fields[$name]['type']];
+    }
+
+    /**
+     * Prepare get action
+     *
+     * @return PDOStatement|null
+     */
+    private function _toGet(): ?PDOStatement
+    {
+        try {
+            $conn = $this->engine()->db()->connection();
+
+            $query = $this->_query['query'];
+
+            if (count($this->_order) == 2) {
+                $query .= ' ORDER BY ' . $this->_order[0] . ' ' . $this->_order[1];
+            }
+
+            if ($this->_limit != -1) {
+                $query .= ' LIMIT ' . $this->_limit;
+            }
+
+            if ($this->_offset != -1) {
+                $query .= ' OFFSET ' . $this->_offset;
+            }
+
+            $stmt = $conn->prepare($query);
+            foreach ($this->_query['params'] as $key => $value) {
+                $stmt->bindParam(':' . $key, $value, $this->_fieldToSqlParamType($key));
+            }
+
+            if (!$stmt->execute()) {
+                return null;
+            }
+
+            return $stmt;
+        } catch (Exception $ex) {
+            return null;
+        }
+    }
 
     /**
      * Allow to share the engine with models
@@ -65,94 +312,14 @@ class Tto
     {
         $this->_engine = $engine;
 
-        if (!$this->computeAnnotations()) {
-            $this->engine()->template()->render('error500');
+        $this->_initialize();
+        if (!$this->_annotationsReader() || !$this->hasId()) {
+            $this->engine()->route()->call('500');
         }
 
-        if (!is_null($id)) {
-            if (is_null($this->fromId($id))) {
-                logError(
-                    sprintf(
-                        "Object with id:%d not found in table '%s'",
-                        $id,
-                        $this->_tableName
-                    ),
-                    __FILE__,
-                    __LINE__
-                );
-
-                $this->engine()->route()->call('error500');
-            }
+        if ($this->hasId() && !is_null($id)) {
+            $this->fromId($id)->get();
         }
-    }
-
-    /**
-     * Convert defualt string value to her type
-     *
-     * @param $value Value to convert
-     * @param string $type Type with
-     * @return bool true, it's a valid conversion, else, false
-     */
-    private function setType(&$value, string $type): bool
-    {
-        try {
-            $valid = @settype($value, $type);
-        } catch (Exception $ex) {
-            $valid = false;
-        }
-
-        return $valid;
-    }
-
-    /**
-     * Compute annotations directives
-     *
-     * @return boolean false, error occured, else, true
-     */
-    private function computeAnnotations(): bool
-    {
-        $rc = new ReflectionClass($this);
-
-        $comments = $rc->getDocComment();
-        if ($comments === false) {
-            return false;
-        }
-
-        // get the table name
-        $regex = '/@table[\s\t]+\'(.+)\'/';
-        $found = preg_match($regex, $comments, $matches);
-        if (!$found || !is_array($matches) || count($matches) != 2) {
-            return false;
-        }
-
-        $this->_tableName = $matches[1];
-
-        // get fields and default values
-        $regex = '/@field[\s\t]+\'(.+)\'[\s\t]+\'(.*)\'/';
-        $found = preg_match_all($regex, $comments, $matches);
-        if (!$found || !is_array($matches) || count($matches) != 3 || !is_array($matches[0])) {
-            return false;
-        }
-
-        $this->_fields = [];
-        $items = (array)$matches[0];
-        for ($i = 0; $i < count($items); $i++) {
-            list($key, $type) = explode(':', $matches[1][$i]);
-
-            $key = trim($key);
-            $type = strtolower(trim($type));
-            $default = trim($matches[2][$i]);
-
-            $this->setType($default, $type);
-
-            $this->_fields[$key] = $default;
-        }
-
-        if (count($this->_fields) == 0) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -164,7 +331,7 @@ class Tto
     public function __get(string $name)
     {
         if (array_key_exists($name, $this->_fields)) {
-            return $this->_fields[$name];
+            return $this->_fields[$name]['value'];
         }
 
         throw (new InvalidArgumentException("Bad property name: $name"));
@@ -179,13 +346,26 @@ class Tto
      */
     public function __set(string $name, $value)
     {
-        if (array_key_exists($name, $this->_fields)) {
-            $this->_olds[$name] = $this->_fields[$name];
-        } else {
-            $this->_olds[$name] = null;
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            throw (new InvalidArgumentException("Bad property name `$name`"));
+            return;
         }
 
-        $this->_fields[$name] = $value;
+        if ($this->hasId() && $name == 'id') {
+            throw (new InvalidArgumentException("Readonly `$name` property"));
+            return;
+        }
+
+        $wantedType = gettype($this->_fields[$name]['value']);
+        $type = gettype($value);
+        if ($type != $wantedType) {
+            throw (new InvalidArgumentException("Bad property `$name` value type `$type`. Expected `$wantedType`"));
+            return;
+        }
+
+        $this->_fields[$name]['value'] = $value;
+        $this->_updated[] = $name;
     }
 
     /**
@@ -210,20 +390,6 @@ class Tto
     }
 
     /**
-     * Return all fields
-     *
-     * @return array Array of fields
-     */
-    public function fields(?array $defaults = null): array
-    {
-        if (!is_null($defaults)) {
-            $this->_fields = $defaults;
-        }
-
-        return $this->_fields;
-    }
-
-    /**
      * Return all columns name
      *
      * @return array Columns name
@@ -234,163 +400,413 @@ class Tto
     }
 
     /**
+     * Reset fields to defaults
+     *
+     * @return Tto
+     */
+    public function reset(): Tto
+    {
+        $this->_fields = $this->_defaults;
+
+        $this->_offset = -1;
+        $this->_limit = -1;
+        $this->_assoc = [];
+        $this->_order = [];
+        $this->_updated = [];
+
+        return $this;
+    }
+
+    /**
+     * Return if column named 'id' exists
+     *
+     * @return boolean true, if exists, else, false
+     */
+    public function hasId(): bool
+    {
+        return array_key_exists('id', $this->_fields);
+    }
+
+    /**
+     * Take number of elements
+     *
+     * @param integer $limit Number of elements. -1 for no limit.
+     * @return Tto
+     */
+    public function take(int $limit = -1): Tto
+    {
+        $this->_limit = $limit >= -1 ? $limit : -1;
+
+        return $this;
+    }
+
+    /**
+     * Take elements at
+     *
+     * @param integer $offset Offset to start
+     * @return Tto
+     */
+    public function offset(int $offset = -1): Tto
+    {
+        $this->_offset = $offset >= -1 ? $offset : -1;
+
+        return $this;
+    }
+
+    /**
+     * Ascending order by
+     *
+     * @param string $name Order by
+     * @return Tto
+     */
+    public function orderAsc(string $name): Tto
+    {
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return $this;
+        }
+
+        $this->_order = [$name, 'ASC'];
+    }
+
+    /**
+     * Descending order by
+     *
+     * @param string $name Order by
+     * @return Tto
+     */
+    public function orderDesc(string $name): Tto
+    {
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return $this;
+        }
+
+        $this->_order = [$name, 'DESC'];
+    }
+
+    /**
+     * Fetch datas from prepared statement
+     *
+     * @return Tto
+     */
+    public function get(): ?Tto
+    {
+        try {
+            $stmt = $this->_toGet();
+            if (is_null($stmt)) {
+                return null;
+            }
+
+            $this->_assoc = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$this->_assoc) {
+                return null;
+            }
+
+            return $this->populate();
+        } catch (Exception $ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Get all elements
+     *
+     * @return Tto[] List of objects found
+     */
+    public function all(): iterable
+    {
+        try {
+            $stmt = $this->_toGet();
+            if (is_null($stmt)) {
+                return [];
+            }
+
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!$result) {
+                return [];
+            }
+
+            $rows = [];
+            foreach ($result as $row) {
+                $cls = get_class($this);
+                $instance = new $cls($this->engine());
+
+                $rows[] = $instance->populate($row);
+            }
+
+            return $rows;
+        } catch (Exception $ex) {
+            return [];
+        }
+    }
+
+    /**
+     * Get from id
+     *
+     * @param integer $id The wanted id
+     * @return Tto
+     */
+    public function fromId(int $id): Tto
+    {
+        if (!$this->hasId()) {
+            return null;
+        }
+
+        $query = sprintf('SELECT * FROM %s WHERE BINARY id = :id', $this->_tableName);
+        $params = ['id' => $id];
+
+        $this->_query = ['query' => $query, 'params' => $params];
+
+        $this->_offset = -1;
+        $this->_limit = 1;
+        $this->_assoc = [];
+        $this->_order = [];
+        $this->_updated = [];
+
+        return $this;
+    }
+
+    /**
+     * Get from condition
+     *
+     * @param string $name Name of field to compare
+     * @param string $operator Operator (eg: = | != | < | > | <= | >= )
+     * @param $value Value to compare
+     * @param boolean $binary Is a binary comparaison?
+     * @return Tto
+     */
+    public function where(string $name, string $operator, $value, bool $binary = false): Tto
+    {
+        $query = sprintf('SELECT * FROM %s WHERE', $this->_tableName);
+
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return $this;
+        }
+
+        $operator = trim($operator);
+        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
+            return $this;
+        }
+
+        $query .= sprintf(
+            '%1$s %2$s %3$s :%2$s',
+            ($binary ? ' BINARY' : ''),
+            $name,
+            $operator
+        );
+        $params = [$name => $value];
+
+        $this->_query = ['query' => $query, 'params' => $params];
+
+        $this->_offset = -1;
+        $this->_limit = 1;
+        $this->_assoc = [];
+        $this->_order = [];
+        $this->_updated = [];
+
+        return $this;
+    }
+
+    /**
+     * Get or an another condition
+     *
+     * @param string $name Name of field to compare
+     * @param string $operator Operator (eg: = | != | < | > | <= | >= )
+     * @param $value Value to compare
+     * @return Tto
+     */
+    public function orWhere(string $name, string $operator, $value): Tto
+    {
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return $this;
+        }
+
+        $operator = trim($operator);
+        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
+            return $this;
+        }
+
+        $query = sprintf(
+            ' OR %1$s %2$s :%1$s',
+            $name,
+            $operator
+        );
+        $params[$name] = $value;
+
+        $this->_query['query'] .= $query;
+        $this->_query['params'] = array_merge($this->_query['params'], $params);
+
+        return $this;
+    }
+
+    /**
+     * Get and an another condition
+     *
+     * @param string $name Name of field to compare
+     * @param string $operator Operator (eg: = | != | < | > | <= | >= )
+     * @param $value Value to compare
+     * @return Tto
+     */
+    public function andWhere(string $name, string $operator, $value): Tto
+    {
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return $this;
+        }
+
+        $operator = trim($operator);
+        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
+            return $this;
+        }
+
+        $query = sprintf(
+            ' AND %1$s %2$s :%1$s',
+            $name,
+            $operator
+        );
+        $params[$name] = $value;
+
+        $this->_query['query'] .= $query;
+        $this->_query['params'] = array_merge($this->_query['params'], $params);
+
+        return $this;
+    }
+
+    /**
      * Populate this object with assoc array
      *
      * @param array $assoc Assoc array
      * @return Tto 
      */
-    public function populate(array $assoc): Tto
+    public function populate(?array $assoc = null): Tto
     {
-        foreach ($assoc as $name => $value) {
-            $this->$name = $value;
+        $this->_assoc = $assoc ?? $this->_assoc;
+        foreach ($this->_assoc as $name => $value) {
+            if (!array_key_exists($name, $this->_fields)) {
+                continue;
+            }
+
+            $value = $this->_convert($value, $this->_fields[$name]['type']);
+            if (gettype($this->_fields[$name]['value']) != gettype($value)) {
+                continue;
+            }
+
+            $this->_fields[$name]['value'] = $value;
         }
 
         return $this;
     }
 
     /**
-     * Copy an object to this object
+     * Update the table
      *
-     * @param Tto $ttoObject Object to copy
-     * @return Tto
+     * @return boolean true, the table is updated, else, false
      */
-    public function copy(Tto $ttoObject): Tto
+    public function update(): bool
     {
-        foreach ($ttoObject->fields() as $name => $value) {
-            $this->$name = $value;
+        if (count($this->_updated) == 0) {
+            return false;
         }
 
-        return $this;
-    }
+        $set = [];
+        $params = [];
+        foreach ($this->_updated as $name) {
+            $params[$name] = $this->_fields[$name]['value'];
+            $set[] = sprintf('%1$s = :%1$s', $name);
+        }
+        $this->_updated = [];
 
-    /**
-     * Fetch datas
-     *
-     * @param string $query SQL Query to fetch (eg: SELECT * FROM :tableName WHERE id = :id AND name = :name)
-     * @param array $params Array of parameters (eg: [['id', 1, PDO::PARAM_INT], ['name', 'bob', PDO::PARAM_STR]])
-     * @return array|mixed Return value or null if error
-     */
-    public function fetch(string $query, array $params = []): ?array
-    {
         try {
-            $conn = $this->_engine->db()->connection();
-
-            $stmt = $conn->prepare(str_replace(':tableName', $this->_tableName, $query));
-
-            foreach ($params as $param) {
-                if (count($param) != 3) {
-                    continue;
-                }
-
-                $stmt->bindParam(':' . $param[0], $param[1], $param[2]);
-            }
-
-            if (!$stmt->execute()) {
-                return null;
-            }
-
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$result) {
-                return null;
-            }
-
-            return $result;
-        } catch (Exception $ex) {
-            logError(
-                sprintf(
-                    'Table To Object, fetch error: %s',
-                    $ex->getMessage()
-                ),
-                $ex->getFile(),
-                $ex->getLine()
+            $query = sprintf(
+                'UPDATE %s SET %s WHERE BINARY id = :id',
+                $this->_tableName,
+                implode(',', $set)
             );
 
-            return null;
+            $conn = $this->engine()->db()->connection();
+
+            $stmt = $conn->prepare($query);
+            $stmt->bindValue(':id', $this->id, $this->_fieldToSqlParamType('id'));
+            foreach ($params as $key => $value) {
+                $stmt->bindValue(
+                    ':' . $key,
+                    $this->_toSqlType($value, $this->_fields[$key]['type']),
+                    $this->_fieldToSqlParamType($key)
+                );
+            }
+
+            if (!$stmt->execute()) {
+                return false;
+            }
+
+            $cnt = $stmt->rowCount();
+            if ($cnt <= 0) {
+                $this->fromId($this->id);
+
+                return false;
+            }
+
+            return true;
+        } catch (Exception $ex) {
+            return false;
         }
     }
 
     /**
-     * Insert datas
+     * Store into the table
      *
-     * @param string $query SQL Query to insert (eg: INSERT INTO :tableName (col1, col2, col3) VALUES (:value1, :value2, :value3))
-     * @param array $params Array of parameters (eg: [['id', 1, PDO::PARAM_INT], ['name', 'bob', PDO::PARAM_STR]])
-     * @return int|mixed Inserted id or null if error
+     * @return boolean true, if stored, else, false
      */
-    public function execute(string $query, array $params = []): ?int
+    public function store(): bool
     {
+        if (count($this->_updated) == 0) {
+            return false;
+        }
+
+        $set = array_keys($this->_fields);
+        if ($this->hasId() && $this->id == -1) {
+            unset($set['id']);
+        }
+        $values = array_map(fn ($name) => ':' . $name, $set);
+        $this->_updated = [];
+
         try {
-            $conn = $this->_engine->db()->connection();
+            $query = sprintf(
+                '%s INTO %s (%s) VALUES %s',
+                ($this->id == -1 ? 'INSERT' : 'REPLACE'),
+                $this->_tableName,
+                implode(',', $set),
+                implode(',', $values)
+            );
 
-            $stmt = $conn->prepare(str_replace(':tableName', $this->_tableName, $query));
+            $conn = $this->engine()->db()->connection();
 
-            foreach ($params as $param) {
-                if (count($param) != 3) {
-                    continue;
-                }
-
-                $stmt->bindValue(':' . $param[0], $param[1], $param[2]);
+            $stmt = $conn->prepare($query);
+            foreach ($set as $key) {
+                $stmt->bindValue(
+                    ':' . $key,
+                    $this->_toSqlType($this->_fields[$key]['value'], $this->_fields[$key]['type']),
+                    $this->_fieldToSqlParamType($key)
+                );
             }
 
             if (!$stmt->execute()) {
-                return null;
+                return false;
             }
 
-            // if is a insert query, return the row id
             $id = $conn->lastInsertId();
+            if ($id > -1) {
+                $this->fromId($id)->get();
 
-            // if is an update query, only rowCount availlable
-            if ($id < 1) {
-                $id = $stmt->rowCount();
+                return true;
             }
 
-            return $id;
+            return false;
         } catch (Exception $ex) {
-            logError(
-                sprintf(
-                    'Table To Object, insert or update error: %s',
-                    $ex->getMessage()
-                ),
-                $ex->getFile(),
-                $ex->getLine()
-            );
-
-            return null;
+            return false;
         }
-    }
-
-    /**
-     * Load an item by Id
-     *
-     * @param integer $id Id of the item
-     * @return Tto|null
-     */
-    public function fromId(int $id): ?Tto
-    {
-        $result = $this->fetch(
-            "SELECT * FROM :tableName WHERE id = :id LIMIT 1",
-            [
-                ['id', $id, PDO::PARAM_INT],
-            ]
-        );
-
-        if (is_null($result) || !is_array($result) || count($result) == 0) {
-            return null;
-        }
-
-        return $this->populate($result);
-    }
-
-    /**
-     * Reload items
-     *
-     * @return Tto|null
-     */
-    public function reload(): ?Tto
-    {
-        if (!isset($this->id) || $this->id == -1) {
-            return $this;
-        }
-
-        return $this->fromId($this->id);
     }
 }

@@ -43,9 +43,9 @@ class Annotations
      * Scan rules
      */
     private const SCAN_FOR = [
-        'scanEnums'                 => '/@enum[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/',
+        'scanEnums'                 => '/@enum[\s\t]+(\w+):(\w+)[\s\t]+"(.*)"/',
         'scanControllers'           => [
-            '/@route[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'[\s\t]+\'(.+)\'/' => [
+            '/@route[\s\t]+(\w+)[\s\t]+(web|api|web[\s\t]*,[\s\t]*api|api[\s\t]*,[\s\t]*web):(GET|POST|PUT|DELETE)[\s\t]+"(.+)"/' => [
                 'engine'            => 'route',
                 'computeMethod'     => 'computeAnnotation'
             ],
@@ -93,7 +93,8 @@ class Annotations
                     }
 
                     for ($i = 0; $i < count($matches[0]); $i++) {
-                        list($name, $key) = explode(':', (string)$matches[1][$i]);
+                        $name = trim($matches[1][$i]);
+                        $key = trim($matches[2][$i]);
 
                         $name = trim($name);
 
@@ -102,7 +103,7 @@ class Annotations
                             settype($key, 'integer');
                         }
 
-                        $value = $matches[2][$i];
+                        $value = $matches[3][$i];
 
                         if (!array_key_exists($name, $enums)) {
                             if ($key == '') {

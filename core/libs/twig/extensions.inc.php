@@ -83,53 +83,53 @@ class CustomTwigExtensions extends AbstractExtension
                 return $this->_engine->route()->get($name, $params);
             }),
 
-            new TwigFunction('dtShort', function (string $datetime, string $from): string {
+            new TwigFunction('dtShort', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    $datetime,
                     IntlDateFormatter::SHORT,
                     IntlDateFormatter::SHORT
                 );
             }),
 
-            new TwigFunction('dShort', function (string $datetime, string $from): string {
+            new TwigFunction('dShort', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    $datetime,
                     IntlDateFormatter::SHORT,
                     IntlDateFormatter::NONE
                 );
             }),
 
-            new TwigFunction('tShort', function (string $datetime, string $from): string {
+            new TwigFunction('tShort', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    $datetime,
                     IntlDateFormatter::NONE,
                     IntlDateFormatter::SHORT
                 );
             }),
 
-            new TwigFunction('dtLong', function (string $datetime, string $from): string {
+            new TwigFunction('dtLong', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime)
+                    $datetime
                 );
             }),
 
-            new TwigFunction('dLong', function (string $datetime, string $from): string {
+            new TwigFunction('dLong', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    $datetime,
                     IntlDateFormatter::LONG,
                     IntlDateFormatter::NONE
                 );
             }),
 
-            new TwigFunction('tLong', function (string $datetime, string $from): string {
+            new TwigFunction('tLong', function (DateTimeImmutable $datetime): string {
                 return dtFormat(
                     $this->_engine,
-                    (new DateTimeImmutable())->createFromFormat($from, $datetime),
+                    $datetime,
                     IntlDateFormatter::NONE,
                     IntlDateFormatter::LONG
                 );

@@ -31,32 +31,32 @@ namespace Core\Models;
 use Core\Engine;
 use Core\Libs\Tto;
 use DateTimeImmutable;
-use PDO;
+use Exception;
 
 use function Core\Libs\jwtToken;
 use function Core\Libs\passwordCompare;
 
 /**
- * An user object
+ * An user table
  * 
- * @table 'users'
+ * @table users
  * 
- * @field 'id:integer' '-1'
- * @field 'token:string' ''
- * @field 'active:integer' '1'
- * @field 'username:string' ''
- * @field 'password:string' ''
- * @field 'displayName:string' 'visiteur'
- * @field 'email:string' ''
- * @field 'createdAt:string' '1970-01-01 00:00:00'
- * @field 'lastLoggedAt:string' '1970-01-01 00:00:00'
- * @field 'role:integer' '0'
+ * @field id:integer "-1"
+ * @field token:string ""
+ * @field active:integer "1"
+ * @field username:string ""
+ * @field password:string ""
+ * @field displayName:string "visiteur"
+ * @field email:string ""
+ * @field createdAt:datetime "1970-01-01 00:00:00"
+ * @field lastLoggedAt:datetime "1970-01-01 00:00:00"
+ * @field role:integer "0"
  * 
- * @enum 'roleTitle:0' 'Visiteur'
- * @enum 'roleTitle:1' 'Abonné'
- * @enum 'roleTitle:2' 'Gestionnaire'
- * @enum 'roleTitle:98' 'Administrateur'
- * @enum 'roleTitle:99' 'Super-Administrateur'
+ * @enum roleTitle:0 "Visiteur"
+ * @enum roleTitle:1 "Abonné"
+ * @enum roleTitle:2 "Gestionnaire"
+ * @enum roleTitle:98 "Administrateur"
+ * @enum roleTitle:99 "Super-Administrateur"
  */
 class User extends Tto
 {
@@ -82,38 +82,39 @@ class User extends Tto
     }
 
     /**
+     * Is it a guest user?
+     *
+     * @return boolean true, user is a logged user, else, false
+     */
+    public function isLogged(): bool
+    {
+        return ($this->id > -1);
+    }
+
+    /**
      * Authentificate an user by username and password
      *
      * @param string $username
      * @param string $password
      * @return Tto
      */
-    public function login(string $username, string $password): ?int
+    public function login(string $username, string $password): User
     {
-        $result = $this->fetch(
-            "SELECT id, password FROM :tableName WHERE BINARY username = :username LIMIT 1",
-            [
-                ['username', $username, PDO::PARAM_STR],
-            ]
-        );
+        try {
+            $this->where('username', '=', $username, true)
+                ->get();
 
-        if (is_null($result) || !is_array($result) || count($result) == 0) {
-            return null;
+            if (!passwordCompare($password, $this->password)) {
+                $this->reset();
+            }
+
+            $this->lastLoggedAt = new DateTimeImmutable();
+            $this->update();
+        } catch (Exception $ex) {
+            $this->reset();
         }
 
-        if (!passwordCompare($password, $result['password'])) {
-            return null;
-        }
-
-        $this->execute(
-            "UPDATE :tableName SET lastLoggedAt = :lastLoggedAt WHERE BINARY id = :id",
-            [
-                ['lastLoggedAt', (new DateTimeImmutable())->format('Y-m-d H:i:s'), PDO::PARAM_STR],
-                ['id', $result['id'], PDO::PARAM_INT],
-            ]
-        );
-
-        return $result['id'];
+        return $this;
     }
 
     /**
@@ -131,20 +132,16 @@ class User extends Tto
             $token = jwtToken($this->id);
         }
 
-        $result = $this->execute(
-            "UPDATE :tableName SET token = :token WHERE BINARY id = :id",
-            [
-                ['token', $token, PDO::PARAM_STR],
-                ['id', $this->id, PDO::PARAM_INT],
-            ]
-        );
+        try {
+            $this->token = $token;
+            if (!$this->update()) {
+                return null;
+            }
 
-        if (is_null($result) || $result == 0) {
+            return $this->token;
+        } catch (Exception $ex) {
             return null;
         }
-
-        $this->fromId($this->id);
-        return $token;
     }
 
     /**
@@ -158,19 +155,12 @@ class User extends Tto
             return false;
         }
 
-        $result = $this->execute(
-            "UPDATE :tableName SET token = :token WHERE BINARY id = :id",
-            [
-                ['token', '', PDO::PARAM_STR],
-                ['id', $this->id, PDO::PARAM_INT],
-            ]
-        );
+        try {
+            $this->token = '';
 
-        if (is_null($result) || $result == 0) {
+            return $this->update();
+        } catch (Exception $ex) {
             return false;
         }
-
-        $this->fromId($this->id);
-        return true;
     }
 }

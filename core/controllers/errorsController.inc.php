@@ -43,7 +43,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 500
      *
-     * @route '500' 'web,api' 'GET' '/500'
+     * @route 500 web,api:GET "/500"
      * @return void
      */
     public function error500()
@@ -65,7 +65,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 404
      *
-     * @route '404' 'web,api' 'GET' '/404'
+     * @route 404 web,api:GET "/404"
      * @return void
      */
     public function error404()
@@ -87,7 +87,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 403
      *
-     * @route '403' 'web,api' 'GET' '/403'
+     * @route 403 web,api:GET "/403"
      * @return void
      */
     public function error403()
@@ -109,7 +109,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 401
      *
-     * @route '401' 'web,api' 'GET' '/401'
+     * @route 401 web,api:GET "/401"
      * @return void
      */
     public function error401()
@@ -131,7 +131,7 @@ class ErrorsController extends Controller
     /**
      * Controller: error 400
      *
-     * @route '400' 'web,api' 'GET' '/400'
+     * @route 400 web,api:GET "/400"
      * @return void
      */
     public function error400()

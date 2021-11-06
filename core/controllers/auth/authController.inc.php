@@ -46,7 +46,7 @@ class AuthController extends Controller
      * Controller: login
      * Only for web app, render a login form to authentificate
      *
-     * @route 'login' 'web' 'GET' '/login'
+     * @route login web:GET "/login"
      * @return void
      */
     public function login()
@@ -76,7 +76,7 @@ class AuthController extends Controller
     /**
      * Controller: logout
      *
-     * @route 'logout' 'web,api' 'GET' '/logout'
+     * @route logout web,api:GET "/logout"
      * @return void
      */
     public function logout()
@@ -106,7 +106,7 @@ class AuthController extends Controller
      * Controller: csrf
      * Retreive new CSRF token
      * 
-     * @route 'csrf' 'api' 'GET' '/authentificate/csrf/{id:string}'
+     * @route csrf api:GET "/authentificate/csrf/{id:string}"
      * @return void
      */
     public function csrf(string $id)
@@ -125,7 +125,7 @@ class AuthController extends Controller
      *  json result  = {"csrfKey":"mykey256_csrf","csrfToken":"88faac6a39c052fc98a0b680cdfac48e","http":200}
      *  next request = POST /authentificate (with correct post params, csrf token included)
      * 
-     * @route 'authentificate' 'web,api' 'POST' '/authentificate'
+     * @route authentificate web,api:POST "/authentificate"
      * @return void
      */
     public function authentificate()
@@ -151,23 +151,9 @@ class AuthController extends Controller
         $username = filter_var(trim($username), FILTER_SANITIZE_STRING);
         $password = filter_var(trim($password), FILTER_SANITIZE_STRING);
 
-        $user = new User($this->engine());
-        $userId = $user->login($username, $password);
-        if (is_null($userId)) {
+        $user = (new User($this->engine()))->login($username, $password);
+        if (!$user->isLogged()) {
             $this->engine()->route()->call('401');
-        }
-
-        if (is_null($user->fromId($userId))) {
-            logError(
-                sprintf(
-                    'Authentificate: Unable to load user id:%d.',
-                    $userId
-                ),
-                __FILE__,
-                __LINE__
-            );
-
-            $this->engine()->route()->call('500');
         }
 
         if ($user->active != 1) {
@@ -179,7 +165,7 @@ class AuthController extends Controller
             logError(
                 sprintf(
                     'Authentificate: Token not updated for user id:%d.',
-                    $userId
+                    $user->id
                 ),
                 __FILE__,
                 __LINE__
@@ -207,7 +193,7 @@ class AuthController extends Controller
             // it's an api
             sendJSON(
                 [
-                    'userId'    => $userId,
+                    'userId'    => $user->id,
                 ],
                 $token
             );

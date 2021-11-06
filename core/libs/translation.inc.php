@@ -29,6 +29,7 @@
 namespace Core\Libs;
 
 use Core\Engine;
+use Locale;
 
 /**
  * Manage templates
@@ -65,6 +66,8 @@ class Translation
                 setlocale(LC_ALL, $this->_currentLocale . '.utf8');
             }
         }
+
+        Locale::setDefault($this->_currentLocale);
 
         $domain = 'messages';
         bindtextdomain($domain, self::FILE);
