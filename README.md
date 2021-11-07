@@ -32,7 +32,7 @@
 <br>
 
 **Base de données**
-- Compatible MySQL et SqLite (drivers indépendants)
+- Compatible MySQL et SqLite (drivers indépendants supportés par l'extension PDO)
 - Micro ORM (Tto) basic simplifiant l'utilisation du CRUD et reposant que les annotations DocBook
 - ...
 <br>

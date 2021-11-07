@@ -188,6 +188,26 @@ class Tto
     }
 
     /**
+     * Return a field sql converted value by his name
+     *
+     * @param string $name Field name
+     * @return void
+     */
+    public function _toSqlValue(string $name)
+    {
+        if (array_key_exists($name, $this->_fields)) {
+            $v = $this->_fields[$name]['value'];
+            $t = $this->_fields[$name]['type'];
+
+            $sv = $this->_toSqlType($v, $t);
+            return $sv;
+        }
+
+        throw (new InvalidArgumentException("Bad property name: $name"));
+        return null;
+    }
+
+    /**
      * Read annotations to define table
      *
      * @return boolean true, everything is good, else, false on error
@@ -313,8 +333,30 @@ class Tto
         $this->_engine = $engine;
 
         $this->_initialize();
-        if (!$this->_annotationsReader() || !$this->hasId()) {
-            $this->engine()->route()->call('500');
+        if (!$this->_annotationsReader()) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with bad DocBook annotations!',
+                    get_class($this),
+                ),
+                __FILE__,
+                __LINE__
+            );
+
+            abort(500);
+        }
+
+        if (!$this->hasId()) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s have not autoincremented `id` field!',
+                    get_class($this),
+                ),
+                __FILE__,
+                __LINE__
+            );
+
+            abort(500);
         }
 
         if ($this->hasId() && !is_null($id)) {
@@ -377,6 +419,17 @@ class Tto
     public function __isset(string $name): bool
     {
         return array_key_exists($name, $this->_fields);
+    }
+
+    /**
+     * Return a field value by his name
+     *
+     * @param string $name Field name
+     * @return void
+     */
+    public function getFieldValue(string $name)
+    {
+        return $this->__get($name);
     }
 
     /**
@@ -505,6 +558,17 @@ class Tto
 
             return $this->populate();
         } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with error: (%s) %s',
+                    get_class($this),
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
             return null;
         }
     }
@@ -537,6 +601,17 @@ class Tto
 
             return $rows;
         } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with error: (%s) %s',
+                    get_class($this),
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
             return [];
         }
     }
@@ -714,7 +789,8 @@ class Tto
         $set = [];
         $params = [];
         foreach ($this->_updated as $name) {
-            $params[$name] = $this->_fields[$name]['value'];
+            $params[$name] = $this->_toSqlValue($name);
+
             $set[] = sprintf('%1$s = :%1$s', $name);
         }
         $this->_updated = [];
@@ -729,15 +805,17 @@ class Tto
             $conn = $this->engine()->db()->connection();
 
             $stmt = $conn->prepare($query);
+
             $stmt->bindValue(
                 ':id',
-                $this->_toSqlType($this->_fields['id']['value'], $this->_fields['id']['type']),
+                $this->_toSqlValue('id'),
                 $this->_fieldToSqlParamType('id')
             );
+
             foreach ($params as $key => $value) {
                 $stmt->bindValue(
                     ':' . $key,
-                    $this->_toSqlType($value, $this->_fields[$key]['type']),
+                    $value,
                     $this->_fieldToSqlParamType($key)
                 );
             }
@@ -755,6 +833,17 @@ class Tto
 
             return true;
         } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with error: (%s) %s',
+                    get_class($this),
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
             return false;
         }
     }
@@ -792,7 +881,7 @@ class Tto
             foreach ($set as $key) {
                 $stmt->bindValue(
                     ':' . $key,
-                    $this->_toSqlType($this->_fields[$key]['value'], $this->_fields[$key]['type']),
+                    $this->_toSqlValue($key),
                     $this->_fieldToSqlParamType($key)
                 );
             }
@@ -810,6 +899,17 @@ class Tto
 
             return false;
         } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with error: (%s) %s',
+                    get_class($this),
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
             return false;
         }
     }
@@ -834,9 +934,10 @@ class Tto
             $conn = $this->engine()->db()->connection();
 
             $stmt = $conn->prepare($query);
+
             $stmt->bindValue(
                 ':id',
-                $this->_toSqlType($this->_fields['id']['value'], $this->_fields['id']['type']),
+                $this->_toSqlValue('id'),
                 $this->_fieldToSqlParamType('id')
             );
 
@@ -853,6 +954,17 @@ class Tto
 
             return false;
         } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Tto - Table object %s with error: (%s) %s',
+                    get_class($this),
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+
             return false;
         }
     }
