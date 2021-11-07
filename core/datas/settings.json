@@ -1,1 +1,5 @@
-{"locale":"fr_FR"}
+{
+    "locale": "fr_FR",
+    "html_dir": "ltr",
+    "charset": "UTF-8"
+}

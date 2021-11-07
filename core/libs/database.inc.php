@@ -38,7 +38,7 @@ class Database
 {
 
     /**
-     * Return new instance of a database manager
+     * Return new instance of a database manager 
      *
      * @return IDB|null Database manager instance or null
      */

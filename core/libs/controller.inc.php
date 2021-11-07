@@ -62,7 +62,7 @@ class Controller
     /**
      * Constructor
      *
-     * @param Engine $engine An engine instance
+     * @param Engine $engine An engine instance 
      */
     public function __construct(Engine $engine)
     {
