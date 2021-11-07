@@ -175,6 +175,9 @@ class Engine
         if (is_null($this->_user)) {
             $this->_user = new User($this);
         }
+        if ($this->_user->isLogged()) {
+            $this->_translation->setCurrent($this->_user->locale, true);
+        }
     }
 
     /**

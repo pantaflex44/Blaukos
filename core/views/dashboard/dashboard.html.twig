@@ -7,6 +7,7 @@
     <main class="container-fluid py-5 small">
         <p>Tableau de bord de {{ user.displayName|_ }} avec le role {{ enums.roleTitle[user.role]|_ }}</p>
         <p>Dernière connexion: {{ dLong(user.lastLoggedAt)}} à {{ tShort(user.lastLoggedAt)}}
+
     </main>
 
     {% include 'footer.html.twig' %}

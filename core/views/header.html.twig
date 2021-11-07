@@ -55,22 +55,22 @@ SOFTWARE.
                             {% if not user.isGuest() %}
 
                                 {% if templateName != 'dashboard' %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('dashboard') }}"><i class="fad fa-tv me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Tableau de bord"|_ }}</span></a>  
+                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('dashboard') }}"><i class="fas fa-tv me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Tableau de bord"|_ }}</span></a>  
                                 {% endif %}
 
                                 {% if templateName != 'index' %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('home') }}"><i class="fad fa-home me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Accueil"|_ }}</span></a>  
+                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('home') }}"><i class="fas fa-home me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Accueil"|_ }}</span></a>  
                                 {% endif %}
 
-                                <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('account') }}" title="{{ "Mon compte"|_ }}"><i class="fad fa-user-circle me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Mon compte"|_ }}</span></a>
-                                <a class="btn btn-sm btn-outline-danger text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('logout') }}" title="{{ "Me déconnecter"|_ }}"><i class="fad fa-sign-out-alt me-2 me-sm-0"></i><span class="d-inline-block d-sm-none" style="margin-bottom: -1px; margin-top: 1px;">{{ "Me déconnecter"|_ }}</span></a>
+                                <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('account') }}" title="{{ "Mon compte"|_ }}"><i class="fas fa-user-circle me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Mon compte"|_ }}</span></a>
+                                <a class="btn btn-sm btn-outline-danger text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('logout') }}" title="{{ "Me déconnecter"|_ }}" {% if env('APP_AUTH_USE_JS', true) %}data-bs-toggle="modal" data-bs-target="#logoutModal"{% endif %}><i class="fas fa-sign-out-alt me-2 me-sm-0"></i><span class="d-inline-block d-sm-none" style="margin-bottom: -1px; margin-top: 1px;">{{ "Me déconnecter"|_ }}</span></a>
                             {% else %}
                                 {% if templateName != 'login' and env('ALLOW_PUBLIC_LOGIN') %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fad fa-sign-in-alt me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span></a>  
+                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span></a>  
                                 {% endif %}
 
                                 {% if templateName != 'register' and env('ALLOW_PUBLIC_REGISTER') %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('register') }}"><i class="fad fa-pen-nib me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "S'enregistrer"|_ }}</span></a>  
+                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('register') }}"><i class="fas fa-pen-nib me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "S'enregistrer"|_ }}</span></a>  
                                 {% endif %}
                             {% endif %}
                         </div>
@@ -80,3 +80,20 @@ SOFTWARE.
         </div>
     </nav>
 </header>
+
+{% if env('APP_AUTH_USE_JS', true) %}
+    <div class="modal " id="logoutModal" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logoutModalLabel"><i class="fas fa-exclamation-triangle text-danger me-2"></i>{{ "Important"|_ }}</h5>
+            </div>
+            <div class="modal-body">{{ "Êtes-vous certain de vouloir vous déconnecter de votre espace?"|_ }}</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{{ "Annuler"|_ }}</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='/logout'">{{ "Valider"|_ }}</button>
+            </div>
+            </div>
+        </div>
+    </div>
+{% endif %}

@@ -42,6 +42,24 @@ class Translation
     private Engine $_engine;
     private string $_currentLocale;
 
+    private function _setLocale()
+    {
+        $locale = $this->_currentLocale;
+
+        if (stripos(PHP_OS, 'win') === 0) {
+            putenv("LC_ALL={$locale}");
+        } else {
+            setlocale(LC_TIME, $locale  . '.utf8', $locale);
+            setlocale(LC_ALL, $locale  . '.utf8', $locale);
+        }
+
+        Locale::setDefault($this->_currentLocale);
+
+        $domain = 'messages';
+        bindtextdomain($domain, self::FILE);
+        textdomain($domain);
+    }
+
     /**
      * Constructor
      */
@@ -55,23 +73,7 @@ class Translation
             $this->_currentLocale = Env::get('APP_DEFAULT_LOCALE', 'fr_FR');
         }
 
-        if (stripos(PHP_OS, 'win') === 0) {
-            putenv("LC_ALL={$this->_currentLocale}");
-        } else {
-            setlocale(LC_TIME, $this->_currentLocale);
-            setlocale(LC_ALL, $this->_currentLocale);
-
-            if (!setlocale(LC_ALL, 0) == 'C') {
-                setlocale(LC_TIME, $this->_currentLocale . '.utf8');
-                setlocale(LC_ALL, $this->_currentLocale . '.utf8');
-            }
-        }
-
-        Locale::setDefault($this->_currentLocale);
-
-        $domain = 'messages';
-        bindtextdomain($domain, self::FILE);
-        textdomain($domain);
+        $this->_setLocale();
     }
 
     /**
@@ -80,12 +82,16 @@ class Translation
      * @param string|null $locale Wanted locale or null to set default
      * @return boolean true, if locale setted, else, false
      */
-    public function setCurrent(?string $locale): bool
+    public function setCurrent(?string $locale, bool $temporary = false): bool
     {
         if (!is_null($locale) && in_array($locale, $this->getAvaillables())) {
             $this->_currentLocale = $locale;
 
-            Settings::set('locale', $this->_currentLocale);
+            if (!$temporary) {
+                Settings::set('locale', $this->_currentLocale);
+            }
+
+            $this->_setLocale();
 
             return true;
         }
@@ -93,7 +99,11 @@ class Translation
         if (is_null($locale)) {
             $this->_currentLocale = Env::get('APP_DEFAULT_LOCALE', 'fr_FR');
 
-            Settings::set('locale', $this->_currentLocale);
+            if (!$temporary) {
+                Settings::set('locale', $this->_currentLocale);
+            }
+
+            $this->_setLocale();
 
             return true;
         }

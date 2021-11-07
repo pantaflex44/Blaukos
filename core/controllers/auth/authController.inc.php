@@ -81,18 +81,22 @@ class AuthController extends Controller
      */
     public function logout()
     {
+        $mode = isset($this->engine()->form()->mode)
+            ? $this->engine()->form()->mode
+            : Env::get('APP_TYPE');
+
         if ($this->engine()->user()->isGuest()) {
             $this->engine()->route()->call('400');
         }
 
         $this->engine()->user()->clearToken();
 
-        if (Env::get('APP_TYPE') == 'api') {
+        if ($mode == 'api') {
             // it's an api
             sendJSON(['action' => 'home']);
         }
 
-        if (Env::get('APP_TYPE') == 'web') {
+        if ($mode == 'web') {
             // it's a web app
             if (isset($_SESSION['JWT_TOKEN'])) {
                 unset($_SESSION['JWT_TOKEN']);
@@ -105,11 +109,12 @@ class AuthController extends Controller
     /**
      * Controller: csrf
      * Retreive new CSRF token
-     * 
-     * @route csrf api:GET "/authentificate/csrf/{id:string}"
+     *
+     * @route randomcsrf web,api:POST "/authentificate/csrf" 
+     * @route newcsrf web,api:POST "/authentificate/csrf/{id:string}"
      * @return void
      */
-    public function csrf(string $id)
+    public function csrf(string $id = '')
     {
         sendJSON($this->engine()->form()->csrfCreate($id));
     }
@@ -130,21 +135,39 @@ class AuthController extends Controller
      */
     public function authentificate()
     {
-        if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
-            $this->engine()->route()->redirect('404');
-        }
-
-        if (!$this->engine()->form()->csrfVerify()) {
-            $this->engine()->route()->call('400');
-        }
-
         $username = isset($this->engine()->form()->username)
             ? $this->engine()->form()->username
             : null;
         $password = isset($this->engine()->form()->password)
             ? $this->engine()->form()->password
             : null;
+        $mode = isset($this->engine()->form()->mode)
+            ? $this->engine()->form()->mode
+            : Env::get('APP_TYPE');
+
+        $csrfHeader = function () {
+            $newCsrf = $this->engine()->form()->csrfCreate();
+            $newCsrf = sprintf(
+                'csrf-token: %s; %s',
+                $newCsrf['csrfKey'],
+                $newCsrf['csrfToken']
+            );
+
+            header($newCsrf, true);
+        };
+
+        if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
+            $csrfHeader();
+            $this->engine()->route()->redirect('404');
+        }
+
+        if (!$this->engine()->form()->csrfVerify()) {
+            $csrfHeader();
+            $this->engine()->route()->call('400');
+        }
+
         if (is_null($username) || is_null($password)) {
+            $csrfHeader();
             $this->engine()->route()->call('400');
         }
 
@@ -153,10 +176,12 @@ class AuthController extends Controller
 
         $user = (new User($this->engine()))->login($username, $password);
         if (!$user->isLogged()) {
+            $csrfHeader();
             $this->engine()->route()->call('401');
         }
 
         if ($user->active != 1) {
+            $csrfHeader();
             $this->engine()->route()->call('403');
         }
 
@@ -171,6 +196,7 @@ class AuthController extends Controller
                 __LINE__
             );
 
+            $csrfHeader();
             $this->engine()->route()->call('500');
         }
 
@@ -178,7 +204,7 @@ class AuthController extends Controller
         header("Authorization: Bearer $token");     # http authorization header for api
         $_SESSION['JWT_TOKEN'] = $token;            # session cookie for web app
 
-        if (Env::get('APP_TYPE') == 'web') {
+        if ($mode == 'web') {
             // it's a web app
             $this->engine()->template()->render(
                 'auth/authentificated',
@@ -189,7 +215,7 @@ class AuthController extends Controller
             );
         }
 
-        if (Env::get('APP_TYPE') == 'api') {
+        if ($mode == 'api') {
             // it's an api
             sendJSON(
                 [

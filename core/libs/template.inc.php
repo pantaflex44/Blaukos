@@ -91,6 +91,10 @@ class Template
 
         $enums = isset($GLOBALS['enums']) ? $GLOBALS['enums'] : null;
 
+        $htmldir = $this->_engine->user()->isLogged()
+            ? $this->_engine->user()->htmldir
+            : Settings::get('html_dir', 'ltr');
+
         // else, load and show template page
         $content = $this->twig()->render(
             $name . '.html.twig',
@@ -101,7 +105,7 @@ class Template
                     'templateName'      => $templateName,
                     'locale'            => $this->_engine->tr()->getCurrent(),
                     'lang'              => $this->_engine->tr()->getLanguageCode(),
-                    'dir'               => Settings::get('html_dir', 'ltr'),
+                    'dir'               => $htmldir,
                     'charset'           => Settings::get('charset', 'UTF-8'),
                 ],
                 $params

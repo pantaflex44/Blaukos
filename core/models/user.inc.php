@@ -51,6 +51,8 @@ use function Core\Libs\passwordCompare;
  * @field createdAt:datetime "1970-01-01 00:00:00"
  * @field lastLoggedAt:datetime "1970-01-01 00:00:00"
  * @field role:integer "0"
+ * @field locale:string "fr_FR"
+ * @field htmldir:string "ltr"
  * 
  * @enum roleTitle:0 "Visiteur"
  * @enum roleTitle:1 "Abonné"

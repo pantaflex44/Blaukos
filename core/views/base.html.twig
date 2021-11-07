@@ -59,7 +59,7 @@ SOFTWARE.
         <meta name="msapplication-TileImage" content="/images/favicons/ms-icon-144x144.png">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="/styles/css/all.css">
         <link rel="stylesheet" href="/styles/bootstrap.min.css">
         <link rel="stylesheet" href="/styles/base.css">
         
@@ -68,6 +68,9 @@ SOFTWARE.
         {% block body %}
 
         {% endblock body %}
-        <script src="/scripts/bootstrap.bundle.js"></script>
+
+        <script type="text/javascript" src="/scripts/bootstrap.bundle.js"></script>
+        <script type="text/javascript" src="/scripts/utilities.js"></script>
+        {% block scripts %}{% endblock scripts %}
     </body>
 </html>

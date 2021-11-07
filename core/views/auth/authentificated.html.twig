@@ -5,24 +5,24 @@
     {% include 'header.html.twig' %}
 
     <main class="container-fluid py-5 small">
-        <div class="card mx-auto" style="width: 90%; max-width: 25rem;">
-            <div class="card-header">
-                <div class="d-flex flex-row gap-2 align-items-center">
-                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
-                    {{ "Authentification réussie!"|_ }}
+        <div class="mx-auto" style="width: 100%; max-width: 25rem;">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link active text-success" id="nav-authentificaed-tab" data-bs-toggle="tab" data-bs-target="#nav-authentificaed" type="button" role="tab" aria-controls="nav-authentificaed" aria-selected="true"><span class="spinner-border spinner-border-sm text-secondary me-3" role="status" aria-hidden="true"></span><i class="fas fa-check-circle me-2 d-none d-sm-inline-block"></i>{{ "Authentification réussie!"|_ }}</button>
                 </div>
-            </div>
-            <div class="card-body mx-sm-4 my-3">
-                <p>
-                    {{ "Dans quelques secondes vous allez être redirigé vers votre tableau de bord."|_ }}
-                </p>
-                <p>
-                    {{ "Veuillez patienter SVP..."|_ }}
-                </p>
-            </div>
-            <div class="card-footer py-3">
-                <div class="d-flex flex-row gap-2 justify-content-end">
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "accueil"|_ }}</a>
+            </nav>
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane border-start border-bottom border-end p-3 show active" id="nav-authentificaed" role="tabpanel" aria-labelledby="nav-authentificaed-tab">
+                    <p>
+                        {{ "Dans quelques secondes vous allez être redirigé vers votre espace."|_ }}
+                    </p>
+                    <p>
+                        {{ "Veuillez patienter SVP..."|_ }}
+                    </p>
+                    <div class="d-flex flex-row gap-2 justify-content-between pt-4">
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "accueil"|_ }}</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('dashboard') }}" role="button">{{ "tableau de bord"|_ }}</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -33,7 +33,7 @@
     <script>
         setTimeout(
             function() {
-                window.location.href = '{{ action }}'; 
+                window.location.href = '/{{ action }}'; 
             }, 1000
         );
     </script>

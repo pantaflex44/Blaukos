@@ -11,7 +11,7 @@
 ### Fonctionnalités
 
 **Framework**
-- Configuration par fichier d'environement (.env)
+- Configuration par fichier d'environement (.env - renomer le fichier .env.sample en .env)
 - Gestion des paramètres utilisateurs
 - Gestion des traductions
 - Mode DEBUG

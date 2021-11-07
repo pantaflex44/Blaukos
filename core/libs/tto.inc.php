@@ -314,6 +314,28 @@ class Tto
     }
 
     /**
+     * Prepare where command
+     *
+     * @param string $name Name of field to compare
+     * @param string $operator Operator (eg: = | != | < | > | <= | >= )
+     * @return array|null Array of prepared datas or null if error
+     */
+    private function _prepareWhere(string $name, string $operator): ?array
+    {
+        $name = trim($name);
+        if (!array_key_exists($name, $this->_fields)) {
+            return null;
+        }
+
+        $operator = trim($operator);
+        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
+            return null;
+        }
+
+        return [$name, $operator];
+    }
+
+    /**
      * Allow to share the engine with models
      *
      * @return Engine
@@ -457,9 +479,11 @@ class Tto
      *
      * @return Tto
      */
-    public function reset(): Tto
+    public function reset(bool $resetField = true): Tto
     {
-        $this->_fields = $this->_defaults;
+        if ($resetField) {
+            $this->_fields = $this->_defaults;
+        }
 
         $this->_offset = -1;
         $this->_limit = -1;
@@ -551,7 +575,12 @@ class Tto
                 return null;
             }
 
-            $this->_assoc = $stmt->fetch(PDO::FETCH_ASSOC);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$result) {
+                return null;
+            }
+
+            $this->_assoc = $result;
             if (!$this->_assoc) {
                 return null;
             }
@@ -633,11 +662,8 @@ class Tto
 
         $this->_query = ['query' => $query, 'params' => $params];
 
-        $this->_offset = -1;
+        $this->reset(false);
         $this->_limit = 1;
-        $this->_assoc = [];
-        $this->_order = [];
-        $this->_updated = [];
 
         return $this;
     }
@@ -655,15 +681,11 @@ class Tto
     {
         $query = sprintf('SELECT * FROM %s WHERE', $this->_tableName);
 
-        $name = trim($name);
-        if (!array_key_exists($name, $this->_fields)) {
+        $prepared = $this->_prepareWhere($name, $operator);
+        if (is_null($prepared)) {
             return $this;
         }
-
-        $operator = trim($operator);
-        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
-            return $this;
-        }
+        list($name, $operator) = $prepared;
 
         $query .= sprintf(
             '%1$s %2$s %3$s :%2$s',
@@ -675,11 +697,8 @@ class Tto
 
         $this->_query = ['query' => $query, 'params' => $params];
 
-        $this->_offset = -1;
+        $this->reset(false);
         $this->_limit = 1;
-        $this->_assoc = [];
-        $this->_order = [];
-        $this->_updated = [];
 
         return $this;
     }
@@ -694,15 +713,11 @@ class Tto
      */
     public function orWhere(string $name, string $operator, $value): Tto
     {
-        $name = trim($name);
-        if (!array_key_exists($name, $this->_fields)) {
+        $prepared = $this->_prepareWhere($name, $operator);
+        if (is_null($prepared)) {
             return $this;
         }
-
-        $operator = trim($operator);
-        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
-            return $this;
-        }
+        list($name, $operator) = $prepared;
 
         $query = sprintf(
             ' OR %1$s %2$s :%1$s',
@@ -727,15 +742,11 @@ class Tto
      */
     public function andWhere(string $name, string $operator, $value): Tto
     {
-        $name = trim($name);
-        if (!array_key_exists($name, $this->_fields)) {
+        $prepared = $this->_prepareWhere($name, $operator);
+        if (is_null($prepared)) {
             return $this;
         }
-
-        $operator = trim($operator);
-        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>='])) {
-            return $this;
-        }
+        list($name, $operator) = $prepared;
 
         $query = sprintf(
             ' AND %1$s %2$s :%1$s',

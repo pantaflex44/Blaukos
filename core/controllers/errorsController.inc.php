@@ -54,7 +54,7 @@ class ErrorsController extends Controller
             'httpError',
             [
                 'code' => 500,
-                'message' => _("erreur serveur"),
+                'message' => _("Erreur critique. Veuillez réessayer plus-tard."),
                 'info' => _("Houston, on a un problème!"),
             ]
         );
@@ -76,7 +76,7 @@ class ErrorsController extends Controller
             'httpError',
             [
                 'code' => 404,
-                'message' => _("page non trouvée"),
+                'message' => _("Page introuvable."),
                 'info' => _("Mais où vas-tu?"),
             ]
         );
@@ -98,7 +98,7 @@ class ErrorsController extends Controller
             'httpError',
             [
                 'code' => 403,
-                'message' => _("accès refusé"),
+                'message' => _("Accès refusé."),
                 'info' => _("Papier d'identité s'il vous plait!"),
             ]
         );
@@ -120,7 +120,7 @@ class ErrorsController extends Controller
             'httpError',
             [
                 'code' => 401,
-                'message' => _("utilisateur non authentifié"),
+                'message' => _("Visiteur interdit. Veuillez vous identifier."),
                 'info' => _("Dans 200m, au rond point, faites demi-tour."),
             ]
         );
@@ -142,7 +142,7 @@ class ErrorsController extends Controller
             'httpError',
             [
                 'code' => 400,
-                'message' => _("requète erronée"),
+                'message' => _("Demande erronée."),
                 'info' => _("Mais qu'as tu fait Maurice?"),
             ]
         );

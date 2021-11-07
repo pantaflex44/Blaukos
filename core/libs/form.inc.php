@@ -128,6 +128,10 @@ class Form
      */
     public function csrfCreate(string $formId = ''): array
     {
+        if ($formId == '') {
+            $formId = $this->createRandomFormId();
+        }
+
         $key = sprintf('%s_csrf', $formId);
         $csrfToken = md5(uniqid(mt_rand(), true));
 
@@ -179,7 +183,7 @@ class Form
     {
         $csrf = $this->csrfCreate($formId);
         return sprintf(
-            '<input type="hidden" name="%s" value="%s">',
+            '<input type="hidden" id="csrf_field" name="%s" value="%s">',
             $csrf['csrfKey'],
             $csrf['csrfToken']
         );

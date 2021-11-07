@@ -104,16 +104,27 @@ function endsWith(string $haystack, string $needle): bool
  * @param integer $code HTTP error code
  * @return void
  */
-function abort(int $code)
+function abort(int $code, ?string $mode = null)
 {
     if ($code == 400 || $code == 500) {
         logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
     }
 
-    $appType = Env::get('APP_TYPE', 'web');
+    $messages = [
+        400     => _("Demande erronée."),
+        401     => _("Visiteur interdit. Veuillez vous identifier."),
+        403     => _("Accès refusé."),
+        404     => _("Page introuvable."),
+        500     => _("Erreur critique. Veuillez réessayer plus-tard."),
+    ];
+
+    $appType = is_null($mode) ? Env::get('APP_TYPE', 'web') : $mode;
+    if ($appType != 'web' && $appType != 'api') {
+        $appType = 'web';
+    }
 
     if ($appType == 'api') {
-        sendJSON(['http' => $code]);
+        sendJSON(['http' => $code, 'errorMessage' => $messages[$code]]);
     }
 
     if ($appType == 'web') {
@@ -676,8 +687,8 @@ function auth(Engine $engine): ?User
         $now = (new DateTimeImmutable())->getTimestamp();
 
         if (
-            $payload['iat'] >= $now
-            || $payload['nbf'] >= $now
+            $payload['iat'] > $now
+            || $payload['nbf'] > $now
             || $payload['exp'] < $now
         ) {
             $unsetAuth();

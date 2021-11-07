@@ -59,7 +59,10 @@ class DashboardController extends Controller
 
         if (Env::get('APP_TYPE') == 'web') {
             // it's a web app
-            $this->engine()->template()->render('dashboard/dashboard');
+            $this->engine()->template()->render(
+                'dashboard/dashboard',
+                []
+            );
         }
     }
 }
