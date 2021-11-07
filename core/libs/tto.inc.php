@@ -707,7 +707,7 @@ class Tto
      */
     public function update(): bool
     {
-        if (count($this->_updated) == 0) {
+        if (count($this->_updated) == 0 || !$this->hasId()) {
             return false;
         }
 
@@ -729,7 +729,11 @@ class Tto
             $conn = $this->engine()->db()->connection();
 
             $stmt = $conn->prepare($query);
-            $stmt->bindValue(':id', $this->id, $this->_fieldToSqlParamType('id'));
+            $stmt->bindValue(
+                ':id',
+                $this->_toSqlType($this->_fields['id']['value'], $this->_fields['id']['type']),
+                $this->_fieldToSqlParamType('id')
+            );
             foreach ($params as $key => $value) {
                 $stmt->bindValue(
                     ':' . $key,
@@ -800,6 +804,49 @@ class Tto
             $id = $conn->lastInsertId();
             if ($id > -1) {
                 $this->fromId($id)->get();
+
+                return true;
+            }
+
+            return false;
+        } catch (Exception $ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Delete rows
+     *
+     * @return boolean true, if stored, else, false
+     */
+    public function delete(): bool
+    {
+        if (!$this->hasId()) {
+            return false;
+        }
+
+        try {
+            $query = sprintf(
+                'DELETE FROM %s WHERE id = :id',
+                $this->_tableName
+            );
+
+            $conn = $this->engine()->db()->connection();
+
+            $stmt = $conn->prepare($query);
+            $stmt->bindValue(
+                ':id',
+                $this->_toSqlType($this->_fields['id']['value'], $this->_fields['id']['type']),
+                $this->_fieldToSqlParamType('id')
+            );
+
+            if (!$stmt->execute()) {
+                return false;
+            }
+
+            $cnt = $stmt->rowCount();
+            if ($cnt > 0) {
+                $this->reset();
 
                 return true;
             }
