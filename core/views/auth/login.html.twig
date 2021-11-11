@@ -31,16 +31,6 @@ SOFTWARE.
 
 {% block scripts %}
 {% if env('APP_AUTH_USE_JS', true) %}
-<script type="text/javascript">
-    const alertMessages = {
-        '*' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
-        '400' : "{{ "Procédure de connexion incorrecte."|_ }}",
-        '401' : "{{ "Identifiants incorrects."|_ }}",
-        '403' : "{{ "Connexion à votre espace, refusée."|_ }}",
-        '404' : "{{ "Ho Ho, page introuvable!"|_ }}",
-        '500' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
-    }
-</script>
 <script type="text/javascript" src="/scripts/auth/login.js"></script>
 {% endif %}
 {% endblock %}
@@ -58,37 +48,62 @@ SOFTWARE.
                 </div>
             </nav>
             <div class="tab-content" id="nav-tabContent">
+
+                {% if env('APP_AUTH_USE_JS', true) %}
+                <div class="bg-white border-start border-end m-0 px-3 pt-3">
+                    <div id="alert" class="alert alert-danger m-0 d-none" role="alert"></div>
+                </div>
+                {% endif %}
                 
-                <div class="tab-pane border-start border-bottom border-end p-3 show active" id="nav-connection" role="tabpanel" aria-labelledby="nav-connection-tab">
+                <div class="tab-pane bg-white border-start border-bottom border-end p-3 show active" id="nav-connection" role="tabpanel" aria-labelledby="nav-connection-tab">
 
-                    <form id="form_login" method="{{ formMethod }}" action="{{ action }}">
-                        {{ csrfField|raw }}
+                    <form id="form_login" method="{{ formMethodLogin }}" action="{{ actionLogin }}">
 
-                        <label for="username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control form-control-sm mb-3" id="username" name="username" placeholder=" " autocomplete="off" required>
+                        <p class="lead">{{ "Accéder à mon espace."|_ }}</p>
+                        <p class="small text-muted mb-4">{{ "Pour celà, renseignez le nom d'utilisateur et le mot de passe de votre compte."|_ }}</p>
+                        
+                        {{ csrfFieldLogin|raw }}
 
-                        <label for="password" class="form-label">Mot de passe</label>
+                        <label for="form_login_username" class="form-label">Nom d'utilisateur</label>
+                        <input type="text" class="form-control form-control-sm mb-3" id="form_login_username" name="username" placeholder=" " autocomplete="off" required>
+
+                        <label for="form_login_password" class="form-label">Mot de passe</label>
                         <div class="input-group input-group-sm flex-nowrap mb-1">
-                            <input type="password" class="form-control" id="password" name="password" placeholder=" " aria-label="{{ "Mot de passe"|_ }}" aria-describedby="passwordView" autocomplete="off" required>
+                            <input type="password" class="form-control" id="form_login_password" name="password" placeholder=" " aria-label="{{ "Mot de passe"|_ }}" aria-describedby="passwordView" autocomplete="off" required>
                             <span class="input-group-text text-muted" style="cursor: pointer;" id="passwordView" title="{{ "Voir le mot de passe"|_ }}" onmousedown="document.getElementById('password').setAttribute('type', 'text');" onmouseup="document.getElementById('password').setAttribute('type', 'password');">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
 
-                        {% if env('APP_AUTH_USE_JS', true) %}
-                        <div id="alert" class="alert alert-danger d-none mt-4" role="alert"></div>
-                        {% endif %}
-
                         <div class="d-flex flex-row gap-2 justify-content-between align-items-center mt-4">
                             <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "retour"|_ }}</a>
-                            <span id="form_spinner" class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status" aria-hidden="true"></span>
-                            <input id="form_submit" type="submit" class="btn btn-sm btn-success" role="submit" value="{{ "connexion"|_ }}">
+                            <span id="form_login_spinner" class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status" aria-hidden="true"></span>
+                            <input id="form_login_submit" type="submit" class="btn btn-sm btn-success" role="submit" value="{{ "connexion"|_ }}">
                         </div>
                     </form>
 
                 </div>
 
-                <div class="tab-pane border-start border-bottom border-end p-3" id="nav-passwordlost" role="tabpanel" aria-labelledby="nav-passwordlost-tab">lp</div>
+                <div class="tab-pane bg-white border-start border-bottom border-end p-3" id="nav-passwordlost" role="tabpanel" aria-labelledby="nav-passwordlost-tab">
+
+                    <form id="form_passwordlost" method="{{ formMethodPasswordLost }}" action="{{ actionPasswordLost }}">
+                        
+                        <p class="lead">{{ "Vous êtes sur le point de demander un lien de réinitialisation pour votre mot de passe."|_ }}</p>
+                        <p class="small text-muted mb-4">{{ "Renseignez le nom d'utilisateur associé à votre compte. Un message sera envoyé à l'adresse email connue pour cet identifiant."|_ }}</p>
+
+                        {{ csrfFieldPasswordLost|raw }}
+
+                        <label for="form_passwordlost_username" class="form-label">Nom d'utilisateur</label>
+                        <input type="text" class="form-control form-control-sm mb-3" id="form_passwordlost_username" name="username" placeholder=" " autocomplete="off" required>
+
+                        <div class="d-flex flex-row gap-2 justify-content-between align-items-center mt-4">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "retour"|_ }}</a>
+                            <span id="form_passwordlost_spinner" class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status" aria-hidden="true"></span>
+                            <input id="form_passwordlost_submit" type="submit" class="btn btn-sm btn-success" role="submit" value="{{ "valider"|_ }}">
+                        </div>
+                    </form>
+
+                </div>
 
             </div>
         </div>

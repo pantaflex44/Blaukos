@@ -50,14 +50,8 @@ class HomeController extends Controller
      */
     public function index()
     {
-        if (Env::get('APP_TYPE') == 'api') {
-            // it's an api
-            $this->engine()->route()->call('404');
-        }
-
-        if (Env::get('APP_TYPE') == 'web') {
-            // it's a web app
-            $this->engine()->template()->render('index');
-        }
+        $this->render([
+            'index'     => []
+        ]);
     }
 }

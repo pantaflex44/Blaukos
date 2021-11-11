@@ -41,6 +41,29 @@ class ErrorsController extends Controller
 {
 
     /**
+     * Raise an HTTP error
+     *
+     * @param integer $code HTTP error code
+     * @param string $message HTTP error message
+     * @param string $info Custum message
+     * @return void
+     */
+    private function _error(int $code, string $message, string $info)
+    {
+        logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
+
+        $this->render([
+            'httpError'     => [
+                'code'      => $code,
+                'message'   => $message,
+                'info'      => $info,
+            ]
+        ]);
+
+        abort($code, $this->appType());
+    }
+
+    /**
      * Controller: error 500
      *
      * @route 500 web,api:GET "/500"
@@ -48,18 +71,26 @@ class ErrorsController extends Controller
      */
     public function error500()
     {
-        logHttpError(debug_backtrace(), 500, __FILE__, __LINE__);
-
-        $this->engine()->template()->render(
-            'httpError',
-            [
-                'code' => 500,
-                'message' => _("Erreur critique. Veuillez réessayer plus-tard."),
-                'info' => _("Houston, on a un problème!"),
-            ]
+        $this->_error(
+            500,
+            _("Erreur critique. Veuillez réessayer plus-tard."),
+            _("Houston, on a un problème!")
         );
+    }
 
-        abort(500);
+    /**
+     * Controller: error 429
+     *
+     * @route 429 web,api:GET "/429"
+     * @return void
+     */
+    public function error429()
+    {
+        $this->_error(
+            429,
+            _("Nombre de requètes trop importantes."),
+            _("Le flood, c'est mal!")
+        );
     }
 
     /**
@@ -70,18 +101,11 @@ class ErrorsController extends Controller
      */
     public function error404()
     {
-        logHttpError(debug_backtrace(), 404, __FILE__, __LINE__);
-
-        $this->engine()->template()->render(
-            'httpError',
-            [
-                'code' => 404,
-                'message' => _("Page introuvable."),
-                'info' => _("Mais où vas-tu?"),
-            ]
+        $this->_error(
+            404,
+            _("Page introuvable."),
+            _("Mais où vas-tu?")
         );
-
-        abort(404);
     }
 
     /**
@@ -92,18 +116,11 @@ class ErrorsController extends Controller
      */
     public function error403()
     {
-        logHttpError(debug_backtrace(), 403, __FILE__, __LINE__);
-
-        $this->engine()->template()->render(
-            'httpError',
-            [
-                'code' => 403,
-                'message' => _("Accès refusé."),
-                'info' => _("Papier d'identité s'il vous plait!"),
-            ]
+        $this->_error(
+            403,
+            _("Accès refusé."),
+            _("Papier d'identité s'il vous plait!"),
         );
-
-        abort(403);
     }
 
     /**
@@ -114,18 +131,11 @@ class ErrorsController extends Controller
      */
     public function error401()
     {
-        logHttpError(debug_backtrace(), 401, __FILE__, __LINE__);
-
-        $this->engine()->template()->render(
-            'httpError',
-            [
-                'code' => 401,
-                'message' => _("Visiteur interdit. Veuillez vous identifier."),
-                'info' => _("Dans 200m, au rond point, faites demi-tour."),
-            ]
+        $this->_error(
+            401,
+            _("Visiteur interdit. Veuillez vous identifier."),
+            _("Dans 200m, au rond point, faites demi-tour."),
         );
-
-        abort(401);
     }
 
     /**
@@ -136,17 +146,10 @@ class ErrorsController extends Controller
      */
     public function error400()
     {
-        logHttpError(debug_backtrace(), 400, __FILE__, __LINE__);
-
-        $this->engine()->template()->render(
-            'httpError',
-            [
-                'code' => 400,
-                'message' => _("Demande erronée."),
-                'info' => _("Mais qu'as tu fait Maurice?"),
-            ]
+        $this->_error(
+            400,
+            _("Demande erronée."),
+            _("Mais qu'as tu fait Maurice?"),
         );
-
-        abort(400);
     }
 }

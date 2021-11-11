@@ -70,6 +70,17 @@ SOFTWARE.
         {% endblock body %}
 
         <script type="text/javascript" src="/scripts/bootstrap.bundle.js"></script>
+        <script type="text/javascript">
+            const alertMessages = {
+                '*' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
+                '400' : "{{ "Procédure de connexion incorrecte."|_ }}",
+                '401' : "{{ "Identifiants incorrects."|_ }}",
+                '403' : "{{ "Connexion à votre espace, refusée."|_ }}",
+                '404' : "{{ "Ho Ho, page introuvable!"|_ }}",
+                '429' : "{{ "Ne soyez pas si pressé! Veuillez recommencer dans quelques secondes."|_ }}",
+                '500' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
+            }
+        </script>
         <script type="text/javascript" src="/scripts/utilities.js"></script>
         {% block scripts %}{% endblock scripts %}
     </body>

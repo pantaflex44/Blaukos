@@ -33,6 +33,7 @@ use Core\Libs\Env;
 use Core\Libs\Database;
 use Core\Libs\Form;
 use Core\Libs\IDB;
+use Core\Libs\Protect;
 use Core\Libs\Route;
 use Core\Libs\Settings;
 use Core\Libs\Template;
@@ -76,6 +77,7 @@ class Engine
     private Template $_template;
     private Translation $_translation;
     private ?User $_user;
+    private Protect $_protect;
 
     /**
      * Return the database manager
@@ -138,6 +140,16 @@ class Engine
     }
 
     /**
+     * App protection
+     *
+     * @return Protect
+     */
+    public function protect(): Protect
+    {
+        return $this->_protect;
+    }
+
+    /**
      * The constructor
      */
     public function __construct()
@@ -158,14 +170,17 @@ class Engine
         // load translation manager
         $this->_translation = new Translation($this);
 
-        // give access to Route manager and load default routes
-        $this->_route = new Route($this);
-
-        // scan all controller's annotations
-        Annotations::scan($this);
+        // load application protection
+        $this->_protect = new Protect($this);
 
         // give access to Form manager
         $this->_form = new Form($this);
+
+        // give access to Route manager and load default routes
+        $this->_route = new Route($this);
+
+        // scan all custum's annotations
+        Annotations::scan($this);
 
         // load the template manager
         $this->_template = new Template($this);

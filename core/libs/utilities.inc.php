@@ -119,18 +119,17 @@ function abort(int $code, ?string $mode = null)
     ];
 
     $appType = is_null($mode) ? Env::get('APP_TYPE', 'web') : $mode;
-    if ($appType != 'web' && $appType != 'api') {
+    if ($appType != 'api') {
         $appType = 'web';
     }
+
+    http_response_code($code);
 
     if ($appType == 'api') {
         sendJSON(['http' => $code, 'errorMessage' => $messages[$code]]);
     }
 
-    if ($appType == 'web') {
-        http_response_code($code);
-        exit;
-    }
+    exit;
 }
 
 /**
@@ -298,14 +297,10 @@ function filepathToClass(string $filepath): string
  * @param array $response Response array formated to send
  * @return void
  */
-function sendJSON(array $response, ?string $token = null): void
+function sendJSON(array $response): void
 {
     if (!array_key_exists('http', $response)) {
         $response['http'] = 200;
-    }
-
-    if (!is_null($token)) {
-        $response['token'] = $token;
     }
 
     header('Content-type: application/json');
@@ -478,9 +473,9 @@ function startSession(): void
     $valid = true;
 
     if (isset($_SESSION['REMOTE_ADDR'])) {
-        $valid &= ($_SESSION['REMOTE_ADDR'] == $_SERVER['REMOTE_ADDR']);
+        $valid &= ($_SESSION['REMOTE_ADDR'] == realIp());
     } else {
-        $_SESSION['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
+        $_SESSION['REMOTE_ADDR'] = realIp();
     }
 
     if (isset($_SESSION['HTTP_USER_AGENT'])) {
@@ -544,7 +539,6 @@ function getHost(): string
         }
     }
 
-    // Remove port number from host
     $host = preg_replace('/:\d+$/', '', $host);
 
     return trim($host);
@@ -754,4 +748,21 @@ function dtFormat(Engine $engine, $datetime, int $dateType = IntlDateFormatter::
     );
 
     return $fmt->format($datetime);
+}
+
+/**
+ * Return the real client IP
+ *
+ * @return string The real client IP
+ */
+function realIp(): string
+{
+    return $_SERVER['HTTP_CLIENT_IP']
+        ?? $_SERVER["HTTP_CF_CONNECTING_IP"]
+        ?? $_SERVER['HTTP_X_FORWARDED']
+        ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_FORWARDED']
+        ?? $_SERVER['HTTP_FORWARDED_FOR']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? '0.0.0.0';
 }

@@ -64,14 +64,17 @@ SOFTWARE.
 
                                 <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('account') }}" title="{{ "Mon compte"|_ }}"><i class="fas fa-user-circle me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Mon compte"|_ }}</span></a>
                                 <a class="btn btn-sm btn-outline-danger text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('logout') }}" title="{{ "Me déconnecter"|_ }}" {% if env('APP_AUTH_USE_JS', true) %}data-bs-toggle="modal" data-bs-target="#logoutModal"{% endif %}><i class="fas fa-sign-out-alt me-2 me-sm-0"></i><span class="d-inline-block d-sm-none" style="margin-bottom: -1px; margin-top: 1px;">{{ "Me déconnecter"|_ }}</span></a>
+                                
                             {% else %}
+                            
                                 {% if templateName != 'login' and env('ALLOW_PUBLIC_LOGIN') %}
                                     <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span></a>  
                                 {% endif %}
 
                                 {% if templateName != 'register' and env('ALLOW_PUBLIC_REGISTER') %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('register') }}"><i class="fas fa-pen-nib me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "S'enregistrer"|_ }}</span></a>  
+                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('register') }}"><i class="fas fa-pen-nib me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Créer un compte"|_ }}</span></a>  
                                 {% endif %}
+
                             {% endif %}
                         </div>
                 {% endif %}

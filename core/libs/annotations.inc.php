@@ -49,6 +49,10 @@ class Annotations
                 'engine'            => 'route',
                 'computeMethod'     => 'computeAnnotation'
             ],
+            '/@protect[\s\t]+flood[\s\t]+([0-9]+(\.[0-9]+)?)[\s\t]*s/' => [
+                'engine'            => 'protect',
+                'computeMethod'     => 'computeFloodAnnotation'
+            ],
         ],
     ];
 
@@ -72,8 +76,6 @@ class Annotations
      */
     public static function scanEnums(Engine $engine): void
     {
-        $filepath = __DIR__ . '/../datas/enums.inc.php';
-
         $enums = [];
 
         $ctrlFiles = globr(__DIR__ . '/../', '/^.*.inc.php$/', true);

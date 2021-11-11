@@ -29,7 +29,6 @@
 namespace Core\Libs;
 
 use Core\Engine;
-use Core\Models\User;
 use Exception;
 
 use function Core\Libs\uritoarray;
@@ -89,6 +88,11 @@ class Route
      */
     private function _call(callable $callback, array $params = []): bool
     {
+        $calling = [$callback[0], '__calling'];
+        if (is_callable($calling)) {
+            call_user_func($calling, $callback);
+        }
+
         $success = (call_user_func_array($callback, $params) === false) ? false : true;
 
         if (!$success) {
@@ -102,6 +106,11 @@ class Route
             );
 
             $this->call('500');
+        }
+
+        $called = [$callback[0], '__called'];
+        if (is_callable($called)) {
+            call_user_func($called, $callback);
         }
 
         return $success;

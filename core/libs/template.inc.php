@@ -106,7 +106,7 @@ class Template
                     'locale'            => $this->_engine->tr()->getCurrent(),
                     'lang'              => $this->_engine->tr()->getLanguageCode(),
                     'dir'               => $htmldir,
-                    'charset'           => Settings::get('charset', 'UTF-8'),
+                    'charset'           => 'UTF-8',
                 ],
                 $params
             )

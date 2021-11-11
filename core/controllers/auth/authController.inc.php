@@ -32,9 +32,7 @@ use Core\Libs\Controller;
 use Core\Libs\Env;
 use Core\Models\User;
 
-use function Core\Libs\auth;
 use function Core\Libs\logError;
-use function Core\Libs\sendJSON;
 
 /**
  * Controllers group to manage home/index page
@@ -47,63 +45,68 @@ class AuthController extends Controller
      * Only for web app, render a login form to authentificate
      *
      * @route login web:GET "/login"
+     * 
+     * @protect flood 2s
+     *
+     * @user allowed "type:guest"
+     * @user denied "type:logged"
+     * 
      * @return void
      */
     public function login()
     {
         if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
-            $this->engine()->route()->redirect('404');
+            $this->redirectError(404);
         }
 
-        if (!$this->engine()->user()->isGuest()) {
-            $this->engine()->route()->call('400');
+        $user = $this->engine()->user();
+        $form = $this->engine()->form();
+
+        if (!$user->isGuest()) {
+            $this->redirectError(400);
         }
 
-        $formId = $this->engine()->form()->createRandomFormId();
-        $csrfField = $this->engine()->form()->csrfHiddenInput($formId);
+        $formLoginId = 'login';
+        $formPasswordLostId = 'passwordlost';
 
-        $this->engine()->template()->render(
-            'auth/login',
-            [
-                'formId' => $formId,
-                'formMethod' => 'POST',
-                'csrfField' => $csrfField,
-                'action' => 'authentificate',
+        $this->render([
+            'auth/login'                    => [
+                'formIdLogin'               => $formLoginId,
+                'formMethodLogin'           => 'POST',
+                'csrfFieldLogin'            => $form->csrfHiddenInput($formLoginId),
+                'actionLogin'               => '/authentificate',
+
+                'formIdPasswordLost'        => $formPasswordLostId,
+                'formMethodPasswordLost'    => 'POST',
+                'csrfFieldPasswordLost'     => $form->csrfHiddenInput($formPasswordLostId),
+                'actionPasswordLost'        => '/passwordlost',
             ]
-        );
+        ]);
     }
 
     /**
      * Controller: logout
      *
      * @route logout web,api:GET "/logout"
+     * 
+     * @protect flood 5s
+     * 
      * @return void
      */
     public function logout()
     {
-        $mode = isset($this->engine()->form()->mode)
-            ? $this->engine()->form()->mode
-            : Env::get('APP_TYPE');
+        $user = $this->engine()->user();
 
-        if ($this->engine()->user()->isGuest()) {
-            $this->engine()->route()->call('400');
+        if ($user->isGuest()) {
+            $this->callError(400);
         }
 
-        $this->engine()->user()->clearToken();
-
-        if ($mode == 'api') {
-            // it's an api
-            sendJSON(['action' => 'home']);
+        $user->clearToken();
+        if (isset($_SESSION['JWT_TOKEN'])) {
+            unset($_SESSION['JWT_TOKEN']);
         }
 
-        if ($mode == 'web') {
-            // it's a web app
-            if (isset($_SESSION['JWT_TOKEN'])) {
-                unset($_SESSION['JWT_TOKEN']);
-            }
-
-            $this->engine()->route()->redirect('home');
-        }
+        $this->redirect('home');
     }
 
     /**
@@ -112,11 +115,16 @@ class AuthController extends Controller
      *
      * @route randomcsrf web,api:POST "/authentificate/csrf" 
      * @route newcsrf web,api:POST "/authentificate/csrf/{id:string}"
+     * 
+     * @protect flood 5s
+     * 
      * @return void
      */
     public function csrf(string $id = '')
     {
-        sendJSON($this->engine()->form()->csrfCreate($id));
+        $this->render([
+            'api' => $this->engine()->form()->csrfCreate($id),
+        ]);
     }
 
     /**
@@ -131,19 +139,21 @@ class AuthController extends Controller
      *  next request = POST /authentificate (with correct post params, csrf token included)
      * 
      * @route authentificate web,api:POST "/authentificate"
+     * 
+     * @protect flood 5s
+     * 
      * @return void
      */
     public function authentificate()
     {
-        $username = isset($this->engine()->form()->username)
-            ? $this->engine()->form()->username
+        $form = $this->engine()->form();
+
+        $username = isset($form->username)
+            ? $form->username
             : null;
-        $password = isset($this->engine()->form()->password)
-            ? $this->engine()->form()->password
+        $password = isset($form->password)
+            ? $form->password
             : null;
-        $mode = isset($this->engine()->form()->mode)
-            ? $this->engine()->form()->mode
-            : Env::get('APP_TYPE');
 
         $csrfHeader = function () {
             $newCsrf = $this->engine()->form()->csrfCreate();
@@ -158,17 +168,17 @@ class AuthController extends Controller
 
         if (Env::get('ALLOW_PUBLIC_LOGIN', 'false') != 'true') {
             $csrfHeader();
-            $this->engine()->route()->redirect('404');
+            $this->redirectError(404);
         }
 
-        if (!$this->engine()->form()->csrfVerify()) {
+        if (!$form->csrfVerify()) {
             $csrfHeader();
-            $this->engine()->route()->call('400');
+            $this->callError(400);
         }
 
         if (is_null($username) || is_null($password)) {
             $csrfHeader();
-            $this->engine()->route()->call('400');
+            $this->callError(400);
         }
 
         $username = filter_var(trim($username), FILTER_SANITIZE_STRING);
@@ -177,12 +187,12 @@ class AuthController extends Controller
         $user = (new User($this->engine()))->login($username, $password);
         if (!$user->isLogged()) {
             $csrfHeader();
-            $this->engine()->route()->call('401');
+            $this->callError(401);
         }
 
         if ($user->active != 1) {
             $csrfHeader();
-            $this->engine()->route()->call('403');
+            $this->callError(403);
         }
 
         $token = $user->updateToken();
@@ -197,32 +207,45 @@ class AuthController extends Controller
             );
 
             $csrfHeader();
-            $this->engine()->route()->call('500');
+            $this->callError(500);
         }
 
         // share the cookie for future use
         header("Authorization: Bearer $token");     # http authorization header for api
         $_SESSION['JWT_TOKEN'] = $token;            # session cookie for web app
 
-        if ($mode == 'web') {
-            // it's a web app
-            $this->engine()->template()->render(
-                'auth/authentificated',
-                [
-                    'user'      => $user,
-                    'action'    => 'dashboard',
-                ]
-            );
+        $this->render([
+            'api'                   => [
+                'userId'            => $user->id,
+                'token'             => $token,
+            ],
+            'auth/authentificated'  => [
+                'user'              => $user,
+                'action'            => 'dashboard',
+            ]
+        ]);
+    }
+
+    /**
+     * Controller: passwordlost
+     * Retreive new CSRF token
+     *
+     * @route passwordlost web,api:POST "/passwordlost" 
+     * @route passwordlost_steps web,api:POST "/passwordlost/{step:integer}"
+     * 
+     * @protect flood 2s
+     * 
+     * @return void
+     */
+    public function passwordlost(int $step = 0)
+    {
+        $user = $this->engine()->user();
+        $form = $this->engine()->form();
+
+        if ($user->isLogged()) {
+            $this->callError(400);
         }
 
-        if ($mode == 'api') {
-            // it's an api
-            sendJSON(
-                [
-                    'userId'    => $user->id,
-                ],
-                $token
-            );
-        }
+        // steps
     }
 }

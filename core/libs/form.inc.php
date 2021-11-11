@@ -159,7 +159,13 @@ class Form
         }
 
         $key = $keys[0];
-        $csrfToken = $_POST[$key];
+        $csrfToken = isset($_POST[$key])
+            ? $_POST[$key]
+            : null;
+
+        if (is_null($csrfToken)) {
+            return false;
+        }
 
         if (!isset($_SESSION[$key])) {
             return false;
@@ -183,7 +189,8 @@ class Form
     {
         $csrf = $this->csrfCreate($formId);
         return sprintf(
-            '<input type="hidden" id="csrf_field" name="%s" value="%s">',
+            '<input type="hidden" id="csrf_field_%s" name="%s" value="%s">',
+            $formId,
             $csrf['csrfKey'],
             $csrf['csrfToken']
         );
