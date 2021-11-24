@@ -39,10 +39,14 @@ use Core\Libs\Settings;
 use Core\Libs\Template;
 use Core\Libs\Translation;
 use Core\Models\User;
+use Exception;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+use PHPMailer\PHPMailer\PHPMailer;
 
 use function Core\Libs\auth;
 use function Core\Libs\autoImport;
 use function Core\Libs\initSession;
+use function Core\Libs\logError;
 use function Core\Libs\startSession;
 
 /**
@@ -201,5 +205,94 @@ class Engine
     public function __destruct()
     {
         Settings::save();
+    }
+
+    /**
+     * Send a mail
+     *
+     * @param array|string $to To email address or array of [ 'email address', 'name' ]
+     * @return boolean true, mail sended, else, false
+     */
+    public function sendMail($to, string $subject, string $templateName, array $templateParams = []): bool
+    {
+        $isDebug = filter_var(Env::get('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+        $mailer = new PHPMailer($isDebug);
+
+        try {
+            $mailer->isSMTP();
+            $mailer->SMTPDebug = 0;
+            $mailer->Host = Env::get('SMTP_HOST', '');
+            $mailer->Port = Env::get('SMTP_PORT', '');
+            if (trim(Env::get('SMTP_USERNAME', '')) != '') {
+                $mailer->SMTPAuth = true;
+                $mailer->SMTPSecure = Env::get('SMTP_SECURE', '');
+                $mailer->Username = Env::get('SMTP_USERNAME', '');
+                $mailer->Password = Env::get('SMTP_PASSWORD', '');
+            } else {
+                $mailer->SMTPAuth = false;
+            }
+            $mailer->addCustomHeader('X-SES-CONFIGURATION-SET', 'ConfigSet');
+
+            $mailer->setFrom(
+                Env::get('SMTP_FROM_EMAIL', ''),
+                Env::get('SMTP_FROM_NAME', '')
+            );
+
+            $toName = '';
+            $toEmail = '';
+            if (is_array($to) && count($to) > 0) {
+                $toEmail = $to[0];
+                if (count($to) > 1) {
+                    $toName = $to[1];
+                }
+            } else {
+                $toEmail = strval($to);
+            }
+            $mailer->addAddress($toEmail, $toName);
+
+            $mailer->CharSet = 'UTF-8';
+            $mailer->isHtml();
+            $mailer->Subject = sprintf(
+                '[%s] %s',
+                Env::get('APP_NAME'),
+                trim($subject)
+            );
+            $mailer->Body = $this->template()->prepare(
+                sprintf('mails/html_%s', $templateName),
+                $templateParams
+            );
+            $mailer->AltBody = $this->template()->prepare(
+                sprintf('mails/text_%s', $templateName),
+                $templateParams
+            );
+
+            if (!$mailer->send()) {
+                return false;
+            }
+
+            return true;
+        } catch (PHPMailerException $pmex) {
+            logError(
+                sprintf(
+                    'PHPMailer error: (%s) %s',
+                    $pmex->getCode(),
+                    $pmex->getMessage()
+                ),
+                $pmex->getFile(),
+                $pmex->getLine()
+            );
+            return false;
+        } catch (Exception $ex) {
+            logError(
+                sprintf(
+                    'Send mail function error: (%s) %s',
+                    $ex->getCode(),
+                    $ex->getMessage()
+                ),
+                $ex->getFile(),
+                $ex->getLine()
+            );
+            return false;
+        }
     }
 }

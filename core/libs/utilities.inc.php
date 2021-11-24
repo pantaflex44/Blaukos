@@ -104,7 +104,7 @@ function endsWith(string $haystack, string $needle): bool
  * @param integer $code HTTP error code
  * @return void
  */
-function abort(int $code, ?string $mode = null)
+function abort(int $code, ?string $mode = null): void
 {
     if ($code == 400 || $code == 500) {
         logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
@@ -356,6 +356,19 @@ function passwordCompare(string $original, string $hash): bool
 }
 
 /**
+ * Generate a random secure token
+ *
+ * @return string The securised token
+ */
+function secureToken(): string
+{
+    $token = openssl_random_pseudo_bytes(16);
+    $token = bin2hex($token);
+
+    return $token;
+}
+
+/**
  * Recursive files search with specified pattern
  *
  * @param string $folder Initial folder
@@ -399,7 +412,7 @@ function globr(string $folder, string $pattern, bool $flat = false, bool $fullpa
  */
 function logError(string $message, string $filename = __FILE__, int $line = __LINE__): void
 {
-    if (Env::get('APP_LOG_ERRORS', 'true') == 'true') {
+    if (filter_var(Env::get('APP_LOG_ERRORS', 'true'), FILTER_VALIDATE_BOOLEAN)) {
         $errorMessage = sprintf(
             '[%s] %s {file: %s at line %d}',
             Env::get('APP_NAME'),
@@ -420,7 +433,7 @@ function logError(string $message, string $filename = __FILE__, int $line = __LI
  */
 function logHttpError(array $backtrace, int $code, string $filename = __FILE__, int $line = __LINE__): void
 {
-    if (Env::get('APP_LOG_HTTP_ERRORS', 'true') == 'true') {
+    if (filter_var(Env::get('APP_LOG_HTTP_ERRORS', 'true'), FILTER_VALIDATE_BOOLEAN)) {
         if (count($backtrace) > 0) {
             $trace = $backtrace[1];
 

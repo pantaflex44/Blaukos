@@ -29,16 +29,18 @@
 namespace Core\Models;
 
 use Core\Engine;
+use Core\Libs\Env;
 use Core\Libs\Tto;
 use DateTimeImmutable;
 use Exception;
 
 use function Core\Libs\jwtToken;
 use function Core\Libs\passwordCompare;
+use function Core\Libs\secureToken;
 
 /**
  * An user table
- * 
+ *
  * @table users
  * 
  * @field id:integer "-1"
@@ -53,6 +55,8 @@ use function Core\Libs\passwordCompare;
  * @field role:integer "0"
  * @field locale:string "fr_FR"
  * @field htmldir:string "ltr"
+ * @field resetLinkToken:string ""
+ * @field resetLinkValidity:datetime "1970-01-01 00:00:00"
  * 
  * @enum roleTitle:0 "Visiteur"
  * @enum roleTitle:1 "Abonné"
@@ -65,8 +69,9 @@ class User extends Tto
 
     /**
      * The constructor
-     * 
+     *
      * @param Engine $engine
+     * @param int|null $id
      */
     public function __construct(Engine $engine, ?int $id = null)
     {
@@ -80,7 +85,7 @@ class User extends Tto
      */
     public function isGuest(): bool
     {
-        return ($this->id == -1);
+        return (isset($this->id) && $this->id == -1);
     }
 
     /**
@@ -90,7 +95,7 @@ class User extends Tto
      */
     public function isLogged(): bool
     {
-        return ($this->id > -1);
+        return (isset($this->id) && $this->id > -1);
     }
 
     /**
@@ -98,7 +103,7 @@ class User extends Tto
      *
      * @param string $username
      * @param string $password
-     * @return Tto
+     * @return User
      */
     public function login(string $username, string $password): User
     {
@@ -126,7 +131,7 @@ class User extends Tto
      */
     public function updateToken(?string $token = null): ?string
     {
-        if (!isset($this->id) || $this->id == -1) {
+        if ($this->isGuest()) {
             return null;
         }
 
@@ -153,7 +158,7 @@ class User extends Tto
      */
     public function clearToken(): bool
     {
-        if (!isset($this->id) || $this->id == -1) {
+        if ($this->isGuest()) {
             return false;
         }
 
@@ -163,6 +168,58 @@ class User extends Tto
             return $this->update();
         } catch (Exception $ex) {
             return false;
+        }
+    }
+
+    /**
+     * Set new reset link
+     *
+     * @return User|null
+     */
+    public function setResetLink(): ?User
+    {
+        if ($this->id === -1) {
+            return null;
+        }
+
+        try {
+            $this->resetLinkToken = secureToken();
+            $this->resetLinkValidity = (new DateTimeImmutable())
+                ->modify('+' . Env::get('RESET_LINK_VALIDITY', '60 minutes'));
+
+            if (!$this->update()) {
+                return null;
+            }
+
+            return $this;
+        } catch (Exception $ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Clear last reset link
+     *
+     * @return User|null
+     */
+    public function clearResetLink(): ?User
+    {
+        if ($this->isLogged()) {
+            return null;
+        }
+
+        try {
+            $this->token = '';
+            $this->resetLinkValidity = (new DateTimeImmutable())
+                ->getTimestamp();
+
+            if (!$this->update()) {
+                return null;
+            }
+
+            return $this;
+        } catch (Exception $ex) {
+            return null;
         }
     }
 }

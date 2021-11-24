@@ -21,6 +21,7 @@
 - Développé sur le modèle MVC (Models / Views / Controllers)
 - Aide à l'utilisation des formulaires
 - Sécurisation des formulaires par jetons CSRF
+- Protection anti-flood des pages du site
 - ...
 <br>
 
@@ -34,6 +35,7 @@
 **Base de données**
 - Compatible MySQL et SqLite (drivers indépendants supportés par l'extension PDO)
 - Micro ORM (Tto) basic simplifiant l'utilisation du CRUD et reposant que les annotations DocBook
+- Protection XSS
 - ...
 <br>
 
@@ -43,5 +45,6 @@
 - Sécurisation des connexions par jetons json web (JWT : Json Web Tokens)
 - Gestion extensibles des profiles
 - Accès à un tableau de bord extensible
+- Utilisation ou non du javascript pour dynamiser l'enregistrement et l'authentification
 - ...
 <br>

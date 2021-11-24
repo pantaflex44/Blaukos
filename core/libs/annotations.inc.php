@@ -146,7 +146,7 @@ class Annotations
      */
     public static function scanControllers(Engine $engine): void
     {
-        if (Env::get('APP_USECACHE', 'false') == 'true') {
+        if (filter_var(Env::get('APP_USECACHE', 'false'), FILTER_VALIDATE_BOOLEAN)) {
             return;
         }
 

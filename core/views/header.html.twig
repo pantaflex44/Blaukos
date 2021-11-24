@@ -67,7 +67,7 @@ SOFTWARE.
                                 
                             {% else %}
                             
-                                {% if templateName != 'login' and env('ALLOW_PUBLIC_LOGIN') %}
+                                {% if (templateName != 'login' and templateName != 'passwordsent') and env('ALLOW_PUBLIC_LOGIN') %}
                                     <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span></a>  
                                 {% endif %}
 

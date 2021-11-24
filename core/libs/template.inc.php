@@ -62,10 +62,10 @@ class Template
         if (Env::get('APP_TYPE') == 'web') {
             $twig = new FilesystemLoader(__DIR__ . '/../views');
             $this->_twig = new Environment($twig, [
-                'cache' => (Env::get('APP_USECACHE', 'true') == 'true' ? true : false)
+                'cache' => filter_var(Env::get('APP_USECACHE', 'true'), FILTER_VALIDATE_BOOLEAN)
                     ? __DIR__ . '/../views/cache'
                     : false,
-                'debug' => (Env::get('APP_DEBUG', 'true') == 'true' ? true : false),
+                'debug' => filter_var(Env::get('APP_DEBUG', 'true'), FILTER_VALIDATE_BOOLEAN),
                 'charset' => 'utf-8',
             ]);
             $this->_twig->addExtension(new CustomTwigExtensions($this->_engine));
@@ -73,17 +73,17 @@ class Template
     }
 
     /**
-     * Render web page from template name with params
+     * Prepare web page from template name with params
      *
      * @param string $name Template name
      * @param array $params Template params
-     * @return void
+     * @return null|string Prepared template
      */
-    public function render(string $name, array $params = [])
+    public function prepare(string $name, array $params = []): ?string
     {
         // if not a web app, return
         if (Env::get('APP_TYPE') != 'web') {
-            return;
+            return null;
         }
 
         $names = explode('/', $name);
@@ -111,6 +111,23 @@ class Template
                 $params
             )
         );
+
+        return $content;
+    }
+
+    /**
+     * Render web page from template name with params
+     *
+     * @param string $name Template name
+     * @param array $params Template params
+     * @return void
+     */
+    public function render(string $name, array $params = [])
+    {
+        $content = $this->prepare($name, $params);
+        if (is_null($content)) {
+            return;
+        }
 
         echo $content;
     }

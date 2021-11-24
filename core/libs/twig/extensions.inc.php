@@ -38,6 +38,7 @@ use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
+use function Core\Libs\baseUrl;
 use function Core\Libs\dtFormat;
 
 class CustomTwigExtensions extends AbstractExtension
@@ -135,15 +136,22 @@ class CustomTwigExtensions extends AbstractExtension
                 );
             }),
 
-            /*new \Twig\TwigFunction('js_path', function () {
-                return dir2url(PARAMS['pathes']['web'] . getTheCaller() . '/js/');
+            new TwigFunction('replace', function () {
+                $args = func_get_args();
+                if (count($args) > 0) {
+                    $text = array_shift($args);
+
+                    return vsprintf($text, $args);
+                }
+
+                return '';
             }),
 
-            new \Twig\TwigFunction('css_path', function () {
-                return dir2url(PARAMS['pathes']['web'] . getTheCaller() . '/styles/css/');
+            new TwigFunction('base', function () {
+                return baseUrl();
             }),
 
-            new \Twig\TwigFunction('images_path', function () {
+            /*new \Twig\TwigFunction('images_path', function () {
                 return dir2url(PARAMS['pathes']['web'] . getTheCaller() . '/images/');
             }),
 

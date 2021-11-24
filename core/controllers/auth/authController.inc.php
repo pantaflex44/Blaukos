@@ -31,6 +31,7 @@ namespace Core\Controllers;
 use Core\Libs\Controller;
 use Core\Libs\Env;
 use Core\Models\User;
+use PHPMailer\PHPMailer\PHPMailer;
 
 use function Core\Libs\logError;
 
@@ -74,12 +75,12 @@ class AuthController extends Controller
                 'formIdLogin'               => $formLoginId,
                 'formMethodLogin'           => 'POST',
                 'csrfFieldLogin'            => $form->csrfHiddenInput($formLoginId),
-                'actionLogin'               => '/authentificate',
+                'actionLogin'               => $this->getRoute('authentificate'),
 
                 'formIdPasswordLost'        => $formPasswordLostId,
                 'formMethodPasswordLost'    => 'POST',
                 'csrfFieldPasswordLost'     => $form->csrfHiddenInput($formPasswordLostId),
-                'actionPasswordLost'        => '/passwordlost',
+                'actionPasswordLost'        => $this->getRoute('passwordlost'),
             ]
         ]);
     }
@@ -122,8 +123,10 @@ class AuthController extends Controller
      */
     public function csrf(string $id = '')
     {
+        $form = $this->engine()->form();
+
         $this->render([
-            'api' => $this->engine()->form()->csrfCreate($id),
+            'api' => $form->csrfCreate($id),
         ]);
     }
 
@@ -148,14 +151,11 @@ class AuthController extends Controller
     {
         $form = $this->engine()->form();
 
-        $username = isset($form->username)
-            ? $form->username
-            : null;
-        $password = isset($form->password)
-            ? $form->password
-            : null;
+        $username = $form->username ?? null;
+        $password = $form->password ?? null;
 
-        $csrfHeader = function () {
+        // create and pass new CSRF Token in HTTP headers
+        $csrfHeader = function (): void {
             $newCsrf = $this->engine()->form()->csrfCreate();
             $newCsrf = sprintf(
                 'csrf-token: %s; %s',
@@ -221,23 +221,22 @@ class AuthController extends Controller
             ],
             'auth/authentificated'  => [
                 'user'              => $user,
-                'action'            => 'dashboard',
+                'action'            => $this->getRoute('dashboard'),
             ]
         ]);
     }
 
     /**
      * Controller: passwordlost
-     * Retreive new CSRF token
+     * Send a reset password link
      *
      * @route passwordlost web,api:POST "/passwordlost" 
-     * @route passwordlost_steps web,api:POST "/passwordlost/{step:integer}"
      * 
      * @protect flood 2s
      * 
      * @return void
      */
-    public function passwordlost(int $step = 0)
+    public function passwordlost()
     {
         $user = $this->engine()->user();
         $form = $this->engine()->form();
@@ -246,6 +245,76 @@ class AuthController extends Controller
             $this->callError(400);
         }
 
-        // steps
+        $username = isset($form->username)
+            ? filter_var($form->username, FILTER_SANITIZE_STRING)
+            : null;
+
+        $wantedUser = (new User($this->engine()))
+            ->where('username', '=', $username, true)
+            ->take(1)
+            ->get();
+
+        if (is_null($wantedUser) || $wantedUser->username !== $username) {
+            $errorMessage = _("Nom d'utilisateur incorrect.");
+            $this->render([
+                'api'                => ['error' => $errorMessage],
+                'auth/passwordsent'  => ['error' => $errorMessage]
+            ]);
+            return;
+        }
+
+        if (is_null($wantedUser->setResetLink())) {
+            $errorMessage = _("Impossible de créer le lien de réinitialisation du mot de passe.");
+            $this->render([
+                'api'                => ['error' => $errorMessage],
+                'auth/passwordsent'  => ['error' => $errorMessage]
+            ]);
+            return;
+        }
+
+        $link = $this->getRoute('passwordreset', [
+            'userId'    => $wantedUser->id,
+            'token'     => $wantedUser->resetLinkToken,
+        ]);
+
+        $to = $wantedUser->email;
+        $sended = $this->engine()->sendMail(
+            $to,
+            _("Lien pour la réinitialisation du mot de passe de votre compte."),
+            'passwordLostResetLink',
+            [
+                'user' => $wantedUser,
+                'link' => $link,
+            ]
+        );
+        if (!$sended) {
+            $errorMessage = _("Impossible d'envoyer l'email contenant le lien de réinitialisation.");
+            $this->render([
+                'api'                => ['error' => $errorMessage],
+                'auth/passwordsent'  => ['error' => $errorMessage]
+            ]);
+            return;
+        }
+
+        $this->render([
+            'api'               => ['wantedUserId'  => $wantedUser->id],
+            'auth/passwordsent' => ['wantedUser'    => $wantedUser]
+        ]);
+    }
+
+    /**
+     * Controller: passwordreset
+     * Reset the password
+     *
+     * @route passwordreset web:GET "/passwordreset/{userId:integer}/{token:string}" 
+     * @route passwordreset api:POST "/passwordreset/{userId:integer}/{token:string}" 
+     * 
+     * @protect flood 2s
+     * 
+     * @return void
+     */
+    public function passwordreset(int $userID, string $token)
+    {
+        die(sprintf('%s - %s', $userID, $token));
     }
 }
