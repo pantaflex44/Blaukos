@@ -1,4 +1,6 @@
-# <img align="left" width="32" src="./public/images/logo32.png">&nbsp;&nbsp;Blaukos
+<img width="64" height="64" src="./public/images/logo64.png" style="margin-right: 1rem; float: left; vertical-align: center">
+
+# Blaukos
 
 ## Micro Framwork PHP 7+
 
