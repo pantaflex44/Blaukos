@@ -1,5 +1,4 @@
 {#
-
 Blaukos - PHP Micro Framework
 
 MIT License
@@ -23,65 +22,89 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 #}
-
 <!DOCTYPE html>
 <html lang="{{ lang }}" dir="{{ dir }}">
-    <head>
-        <meta charset="{{ charset }}">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        <title>{{ env('APP_NAME') }} - {{ title }}</title>
+<head>
+    <meta charset="{{ charset }}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="dns-prefetch" href="{{ base() }}">
+    <link rel="canonical" href="{{ canonical() }}">
+
+    {% if isAdmin is not defined %}
+        {% set isAdmin = false %}
+    {% endif %}
+    {% if isAdmin %}
+        <meta name="robots" content="noindex, nofollow">
+    {% else %}
+        <meta name="robots" content="index, follow">
         <meta name="description" content="{{ env('APP_DESCRIPTION') }}">
-        <meta name="author" content="{{ env('APP_AUTHOR_NAME') }} <{{ env('APP_AUTHOR_EMAIL') }}>">
-        <meta name="copyright" content="{{ env('APP_COPYRIGHT') }}">
-        
-        <meta name="generator" content="{{ env('APP_NAME') }}">
-        <meta name="robots" content="none">
+        <meta name="keywords" content="{{ env('APP_KEYWORDS') }}">
+    {% endif %}
 
-        <link rel="apple-touch-icon" sizes="57x57" href="/images/favicons/apple-icon-57x57.png">
-        <link rel="apple-touch-icon" sizes="60x60" href="/images/favicons/apple-icon-60x60.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/images/favicons/apple-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="76x76" href="/images/favicons/apple-icon-76x76.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/images/favicons/apple-icon-114x114.png">
-        <link rel="apple-touch-icon" sizes="120x120" href="/images/favicons/apple-icon-120x120.png">
-        <link rel="apple-touch-icon" sizes="144x144" href="/images/favicons/apple-icon-144x144.png">
-        <link rel="apple-touch-icon" sizes="152x152" href="/images/favicons/apple-icon-152x152.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-icon-180x180.png">
-        <link rel="icon" type="image/png" sizes="192x192" href="/images/favicons/android-icon-192x192.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="96x96" href="/images/favicons/favicon-96x96.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
-        <link rel="manifest" href="/manifest.json">
-        <meta name="msapplication-TileColor" content="#ffffff">
-        <meta name="msapplication-TileImage" content="/images/favicons/ms-icon-144x144.png">
-        <meta name="theme-color" content="#ffffff">
+    <title>{{ env('APP_NAME') }} - {{ title }}</title>
+    <meta name="author" content="{{ env('APP_AUTHOR_NAME') }} <{{ env('APP_AUTHOR_EMAIL') }}>">
+    <meta name="copyright" content="{{ env('APP_COPYRIGHT') }}">
+    <meta name="generator" content="{{ env('APP_NAME') }}">
 
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ base() }}/images/favicons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ base() }}/images/favicons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ base() }}/images/favicons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ base() }}/images/favicons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ base() }}/images/favicons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ base() }}/images/favicons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ base() }}/images/favicons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ base() }}/images/favicons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ base() }}/images/favicons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ base() }}/images/favicons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ base() }}/images/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ base() }}/images/favicons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ base() }}/images/favicons/favicon-16x16.png">
+    <link rel="icon" type="image/icon" sizes="16x16" href="{{ base() }}/favicon.ico">
+    <link rel="manifest" href="{{ base() }}/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="{{ base() }}/images/favicons/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="/styles/preloading.css">
+    <script type="text/javascript" src="/scripts/preloading.js"></script>
+
+    <link rel="preload" as="style" href="/styles/css/all.css" onload="this.rel='stylesheet'">
+    <link rel="preload" as="style" href="/styles/bootstrap.min.css" onload="this.rel='stylesheet'">
+    <link rel="preload" as="style" href="/styles/base.css" onload="this.rel='stylesheet'">
+    <noscript>
         <link rel="stylesheet" href="/styles/css/all.css">
         <link rel="stylesheet" href="/styles/bootstrap.min.css">
         <link rel="stylesheet" href="/styles/base.css">
-        
-    </head>
-    <body class="container">
-        {% block body %}
+    </noscript>
 
-        {% endblock body %}
+    {% block styles %}{% endblock styles %}
+</head>
+<body class="container-fluid p-0 position-relative noscroll" style="min-height: 100vh;">
+<div id="overlay"></div>
+<div id="spinner"></div>
+{% block body %}
 
-        <script type="text/javascript" src="/scripts/bootstrap.bundle.js"></script>
-        <script type="text/javascript">
-            const alertMessages = {
-                '*' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
-                '400' : "{{ "Procédure de connexion incorrecte."|_ }}",
-                '401' : "{{ "Identifiants incorrects."|_ }}",
-                '403' : "{{ "Connexion à votre espace, refusée."|_ }}",
-                '404' : "{{ "Ho Ho, page introuvable!"|_ }}",
-                '429' : "{{ "Ne soyez pas si pressé! Veuillez recommencer dans quelques secondes."|_ }}",
-                '500' : "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
-            }
-        </script>
-        <script type="text/javascript" src="/scripts/utilities.js"></script>
-        {% block scripts %}{% endblock scripts %}
-    </body>
+{% endblock body %}
+
+
+<script type="text/javascript" src="/scripts/bootstrap.bundle.js"></script>
+<script type="text/javascript">
+    const alertMessages = {
+        '*': "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
+        '400': "{{ "Procédure de connexion incorrecte."|_ }}",
+        '401': "{{ "Identifiants incorrects."|_ }}",
+        '403': "{{ "Connexion à votre espace, refusée."|_ }}",
+        '404': "{{ "Ho Ho, page introuvable!"|_ }}",
+        '429': "{{ "Ne soyez pas si pressé! Veuillez recommencer dans quelques secondes."|_ }}",
+        '500': "{{ "Une erreur est survenue. Veuillez réessayer ultérieurement."|_ }}",
+        'passwordQuality': "{{ "Mot de passe de mauvaise qualité. Vous devez utiliser au moins 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial et 8 caractères."|_ }}",
+        'passwordNotEquals': "{{ "Mot de passe incorrect. La confirmation est différente de l'original..."|_ }}",
+    }
+</script>
+<script type="text/javascript" src="/scripts/utilities.js"></script>
+{% block scripts %}{% endblock scripts %}
+</body>
 </html>

@@ -1,0 +1,75 @@
+{#
+Blaukos - PHP Micro Framework
+
+MIT License
+
+Copyright (C) 2021 Christophe LEMOINE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+#}
+{% set isAdmin = true %}
+{% set breadcrumb = [
+    ["Accueil"|_, "home"],
+    [title, "#"]
+] %}
+
+{% extends 'body.html.twig' %}
+
+{% block main %}
+    <article class="container-fluid py-5 small">
+
+        <div class="mx-auto" style="width: 100%; max-width: 25rem;">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link active" id="nav-errors-tab" data-bs-toggle="tab"
+                            data-bs-target="#nav-errors" type="button" role="tab" aria-controls="nav-errors"
+                            aria-selected="false">
+                        <img class="icon-errors" src="/images/{{ code }}.gif"
+                             style="width: 16px; height: 16px; vertical-align: middle;"
+                             alt="{{ code }}"> {{ "Oups!"|_ }}
+                    </button>
+                </div>
+            </nav>
+            <div class="tab-content" id="nav-tabContent">
+
+                <div class="tab-pane bg-white border-start border-bottom border-end p-3 show active" id="nav-errors"
+                     role="tabpanel" aria-labelledby="nav-errors-tab">
+
+                    <p class="lead text-danger fw-bold">
+                        {{ title }}
+                    </p>
+                    <p class="text-muted mb-4">
+                        {{ message }}
+                    </p>
+
+                    <div class="d-flex flex-row gap-2 justify-content-between align-items-center mt-4">
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}"
+                           role="button">{{ "accueil"|_ }}</a>
+                        {% if not user.isGuest() %}
+                            <a class="btn btn-sm btn-primary" href="{{ route('dashboard') }}"
+                               role="button">{{ "mon tableau de bord"|_ }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </article>
+{% endblock main %}

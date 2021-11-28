@@ -1,5 +1,4 @@
 {#
-
 Blaukos - PHP Micro Framework
 
 MIT License
@@ -23,79 +22,101 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 #}
 
 <header>
-    <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-faded">
+    <nav class="navbar sticky-top navbar-expand-sm navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="/images/logo24.png" alt="{{ env('APP_NAME') }}" class="d-inline-block align-text-top">
-                {{ env('APP_NAME') }}
+            <a class="navbar-brand d-flex flex-row flex-nowrap align-items-center" href="{{ route('home') }}">
+                <img src="/images/logo64.png" alt="{{ env('APP_NAME') }}" height="48"
+                     class="d-inline-block m-0 p-0 me-2">
+                <span class="display-6">{{ env('APP_NAME') }}</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-                <span class="navbar-text small me-sm-3 d-sm-none d-md-block">
+
+            <div class="collapse navbar-collapse justify-content-between mb-3 mb-sm-0" id="navbarNav">
+                <span class="navbar-text small me-sm-3 d-sm-none d-md-block text-nowrap">
                     <small>{{ env('APP_SLOGAN') }}</small>
                 </span>
 
-                <!--{% if not user.isGuest() and templateName != 'authentificated' %}
-                <div class="navbar-nav">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    <a class="nav-link" href="#">Features</a>
-                    <a class="nav-link" href="#">Pricing</a>
-                    <a class="nav-link disabled">Disabled</a>
-                </div>
-                {% endif %}-->
-
                 {% if templateName != 'authentificated' %}
-                        <div class="navbar-nav" role="group">
-                            {% if not user.isGuest() %}
+                    <div class="navbar-nav small mt-4 mt-sm-0 ms-2 ms-sm-0" role="group">
+                        {% if not user.isGuest() %}
 
-                                {% if templateName != 'dashboard' %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('dashboard') }}"><i class="fas fa-tv me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Tableau de bord"|_ }}</span></a>  
-                                {% endif %}
-
-                                {% if templateName != 'index' %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('home') }}"><i class="fas fa-home me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Accueil"|_ }}</span></a>  
-                                {% endif %}
-
-                                <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('account') }}" title="{{ "Mon compte"|_ }}"><i class="fas fa-user-circle me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Mon compte"|_ }}</span></a>
-                                <a class="btn btn-sm btn-outline-danger text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('logout') }}" title="{{ "Me déconnecter"|_ }}" {% if env('APP_AUTH_USE_JS', true) %}data-bs-toggle="modal" data-bs-target="#logoutModal"{% endif %}><i class="fas fa-sign-out-alt me-2 me-sm-0"></i><span class="d-inline-block d-sm-none" style="margin-bottom: -1px; margin-top: 1px;">{{ "Me déconnecter"|_ }}</span></a>
-                                
-                            {% else %}
-                            
-                                {% if (templateName != 'login' and templateName != 'passwordsent') and env('ALLOW_PUBLIC_LOGIN') %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span></a>  
-                                {% endif %}
-
-                                {% if templateName != 'register' and env('ALLOW_PUBLIC_REGISTER') %}
-                                    <a class="btn btn-sm btn-outline-secondary text-start text-nowrap mt-3 mt-sm-0 ms-sm-2" href="{{ route('register') }}"><i class="fas fa-pen-nib me-2"></i><span class="d-inline-block" style="margin-bottom: -1px; margin-top: 1px;">{{ "Créer un compte"|_ }}</span></a>  
-                                {% endif %}
-
+                            {% if templateName != 'dashboard' and user.role >= 2 %}
+                                <a class="nav-link text-nowrap"
+                                   href="{{ route('dashboard') }}"><i class="fas fa-tv me-2"></i><span
+                                            class="d-inline-block"
+                                            style="margin-bottom: -1px; margin-top: 1px;">{{ "Tableau de bord"|_ }}</span></a>
                             {% endif %}
-                        </div>
+
+                            {% if templateName != 'index' %}
+                                <a class="nav-link text-nowrap"
+                                   href="{{ route('home') }}"><i class="fas fa-home me-2"></i><span
+                                            class="d-inline-block"
+                                            style="margin-bottom: -1px; margin-top: 1px;">{{ "Accueil"|_ }}</span></a>
+                            {% endif %}
+
+                            {% if env('ALLOW_PUBLIC_LOGIN') %}
+                                <a class="nav-link text-nowrap active"
+                                   href="{{ route('logout') }}" title="{{ "Me déconnecter"|_ }}"
+                                   {% if env('APP_AUTH_USE_JS', true) %}data-bs-toggle="modal"
+                                   data-bs-target="#logoutModal"{% endif %}>
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    <span class="d-inline-block"
+                                          style="margin-bottom: -1px; margin-top: 1px;">{{ "Me déconnecter"|_ }}</span>
+                                </a>
+                            {% endif %}
+
+                        {% else %}
+
+                            {% if (templateName != 'login' and templateName != 'passwordsent') and env('ALLOW_PUBLIC_LOGIN') %}
+                                <a class="nav-link text-nowrap active"
+                                   href="{{ route('login') }}">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    <span class="d-inline-block"
+                                          style="margin-bottom: -1px; margin-top: 1px;">{{ "Connexion"|_ }}</span>
+                                </a>
+                            {% endif %}
+
+                            {% if templateName != 'register' and env('ALLOW_PUBLIC_REGISTER') %}
+                                <a class="nav-link text-nowrap"
+                                   href="{{ route('register') }}">
+                                    <i class="fas fa-pen-nib me-2"></i>
+                                    <span class="d-inline-block"
+                                          style="margin-bottom: -1px; margin-top: 1px;">{{ "Créer un compte"|_ }}</span>
+                                </a>
+                            {% endif %}
+
+                        {% endif %}
+                    </div>
                 {% endif %}
-                
+
             </div>
         </div>
     </nav>
 </header>
 
 {% if env('APP_AUTH_USE_JS', true) %}
-    <div class="modal " id="logoutModal" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal small" id="logoutModal" data-bs-backdrop="static" data-bs-keyboard="true" tabindex="-1"
+         aria-labelledby="logoutModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="logoutModalLabel"><i class="fas fa-exclamation-triangle text-danger me-2"></i>{{ "Important"|_ }}</h5>
-            </div>
-            <div class="modal-body">{{ "Êtes-vous certain de vouloir vous déconnecter de votre espace?"|_ }}</div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{{ "Annuler"|_ }}</button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='/logout'">{{ "Valider"|_ }}</button>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel"><i
+                                class="fas fa-exclamation-triangle text-danger me-2"></i>{{ "Important"|_ }}</h5>
+                </div>
+                <div class="modal-body">{{ "Êtes-vous certain de vouloir vous déconnecter de votre espace?"|_ }}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary"
+                            data-bs-dismiss="modal">{{ "Annuler"|_ }}</button>
+                    <button type="button" class="btn btn-sm btn-primary"
+                            onclick="window.location.href='/logout'">{{ "Valider"|_ }}</button>
+                </div>
             </div>
         </div>
     </div>

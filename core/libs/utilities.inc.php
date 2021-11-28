@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -111,11 +111,11 @@ function abort(int $code, ?string $mode = null): void
     }
 
     $messages = [
-        400     => _("Demande erronée."),
-        401     => _("Visiteur interdit. Veuillez vous identifier."),
-        403     => _("Accès refusé."),
-        404     => _("Page introuvable."),
-        500     => _("Erreur critique. Veuillez réessayer plus-tard."),
+        400 => _("Demande erronée."),
+        401 => _("Visiteur interdit. Veuillez vous identifier."),
+        403 => _("Accès refusé."),
+        404 => _("Page introuvable."),
+        500 => _("Erreur critique. Veuillez réessayer plus-tard."),
     ];
 
     $appType = is_null($mode) ? Env::get('APP_TYPE', 'web') : $mode;
@@ -184,7 +184,7 @@ function uriToArray(string $uri): array
 
     $ret = array_values(array_filter(
         $ret,
-        fn ($value, string $key): bool => trim($key) != '' && ((is_string($value) && trim($value) != '') || is_array($value)),
+        fn($value, string $key): bool => trim($key) != '' && ((is_string($value) && trim($value) != '') || is_array($value)),
         ARRAY_FILTER_USE_BOTH
     ));
 
@@ -275,7 +275,7 @@ function filepathToClass(string $filepath): string
         return '\\';
     }
 
-    $f = array_map(fn ($itm) => ucfirst($itm), $f);
+    $f = array_map(fn($itm) => ucfirst($itm), $f);
     $ns = '\\' . implode('\\', $f);
     if (!endsWith($ns, '\\')) {
         $ns .= '\\';
@@ -353,6 +353,24 @@ function password(string $original): string
 function passwordCompare(string $original, string $hash): bool
 {
     return password_verify($original, $hash);
+}
+
+/**
+ * Verify if password strength is good or not
+ * @param string $password The password
+ * @param int $minLength Minimum password size
+ * @return bool Password strength is good or not
+ */
+function passwordGoodStrength(string $password, int $minLength = 8): bool
+{
+    $password = trim($password);
+
+    $uppercase = preg_match('@[A-Z]@', $password);
+    $lowercase = preg_match('@[a-z]@', $password);
+    $number = preg_match('@[0-9]@', $password);
+    $specialChars = preg_match('@[^\w]@', $password);
+
+    return !(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < $minLength);
 }
 
 /**
@@ -582,16 +600,16 @@ function jwtToken(int $userId): string
     $serverName = getHost();
 
     $headers = rawurlencode(base64_encode(json_encode([
-        'alg'       => 'hash',
-        'typ'       => 'JWT'
+        'alg' => 'hash',
+        'typ' => 'JWT'
     ])));
 
     $payload = rawurlencode(base64_encode(json_encode([
-        'iat'       => $issuedAt->getTimestamp(),
-        'iss'       => $serverName,
-        'nbf'       => $issuedAt->getTimestamp(),
-        'exp'       => $expire,
-        'uid'       => $userId,
+        'iat' => $issuedAt->getTimestamp(),
+        'iss' => $serverName,
+        'nbf' => $issuedAt->getTimestamp(),
+        'exp' => $expire,
+        'uid' => $userId,
     ])));
 
     $signature = rawurlencode(base64_encode(hash_hmac(

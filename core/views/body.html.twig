@@ -1,0 +1,121 @@
+{#
+Blaukos - PHP Micro Framework
+
+MIT License
+
+Copyright (C) 2021 Christophe LEMOINE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+
+    <div class="row align-items-stretch p-0 m-0 fullback-color" style="min-height: 90vh;">
+
+        {% if user.isLogged() and (templateName != 'index' and templateName != 'profil') %}
+            <aside class="col-auto p-0 small responsive-vaside">
+                <div class="d-none d-sm-block hsep-4 me-3 bg-dark bg-gradient"></div>
+                <div class="border-end responsive-vlist" style="height: calc(100% - calc(1px + (4 * 4px) - 4px));">
+                    <div class="list-group list-group-flush m-0 p-0 pt-1 pt-sm-0">
+                        <div class="d-none d-sm-block list-group-item bg-dark text-muted small">
+                            <span>{{ "Mon espace"|_ }}</span>
+                        </div>
+                        <a class="list-group-item list-group-item-action {% if templateName == 'dashboard' %}active{% endif %}"
+                           href="{{ route('dashboard') }}"
+                           title="{{ "Tableau de bord"|_ }}">
+                            <i class="fas fa-tv"></i>
+                            <span>{{ "Tableau de bord"|_ }}</span>
+                        </a>
+                        <a class="list-group-item list-group-item-action {% if templateName == 'account' %}active{% endif %}"
+                           href="{{ route('account') }}"
+                           title="{{ "Compte et profil"|_ }}">
+                            <i class="fas fa-user-cog"></i>
+                            <span>{{ "Compte et profil"|_ }}</span>
+                        </a>
+
+                        {% if user.role == 99 %}
+                            <div class="d-none d-sm-block list-group-item bg-dark text-muted small">
+                                <span>{{ "Administration"|_ }}</span>
+                            </div>
+                            <a class="list-group-item list-group-item-action {% if templateName == 'users' %}active{% endif %}"
+                               href="{{ route('users') }}"
+                               title="{{ "Utilisateurs"|_ }}">
+                                <i class="fas fa-users"></i>
+                                <span>{{ "Utilisateurs"|_ }}</span>
+                            </a>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </aside>
+        {% endif %}
+
+        <main class="col small p-0">
+            <div class="d-none d-sm-block hsep-4 me-3 bg-dark bg-gradient"></div>
+            <section class="px-3">
+
+                {% if not breadcrumb is defined %}
+                    {% set breadcrumb = [
+                        ["Accueil"|_, "home"]
+                    ] %}
+                {% endif %}
+
+                <nav class="container-fluid m-0 p-0"
+                     style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
+                     aria-label="breadcrumb">
+
+                    {% if user.isLogged() %}
+                        <div class="small m-0 my-2 d-flex flex-row flex-wrap justify-content-start align-items-center gap-2">
+                            <p class="fw-bold m-0 p-0">Bonjour {{ user.displayName|_ }}</p>
+                            {% if not user.isGuest() %}
+                                <p class="small text-muted m-0 p-0">({{ enums.roleTitle[user.role]|_ }})</p>
+                            {% endif %}
+                            {% if not user.isGuest() %}
+                                <p class="small m-0 p-0">{{ replace("Dernière connexion le %s à %s"|_, dLong(user.lastLoggedAt), tShort(user.lastLoggedAt)) }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <ol class="breadcrumb ms-1 mt-3">
+                        <li class="breadcrumb-item" aria-current="page"><i class="fas fa-route"></i></li>
+                        {% for item in breadcrumb %}
+                            {% if loop.last %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ item[0] }}</li>
+                            {% else %}
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route(item[1]) }}">{{ item[0] }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+
+                </nav>
+            </section>
+
+            <section class="m-3">
+                {% block main %}
+                {% endblock main %}
+            </section>
+        </main>
+    </div>
+
+    {% include 'footer.html.twig' %}
+{% endblock body %}

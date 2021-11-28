@@ -108,7 +108,7 @@ class Annotations
                         $value = $matches[3][$i];
 
                         if (!array_key_exists($name, $enums)) {
-                            if ($key == '') {
+                            if ($key != '') {
                                 $enums[$name] = [$key => $value];
                             } else {
                                 $enums[$name] = $value;

@@ -39,6 +39,7 @@ use Core\Libs\Settings;
 use Core\Libs\Template;
 use Core\Libs\Translation;
 use Core\Models\User;
+use DI\ContainerBuilder;
 use Exception;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -197,6 +198,7 @@ class Engine
         if ($this->_user->isLogged()) {
             $this->_translation->setCurrent($this->_user->locale, true);
         }
+
     }
 
     /**

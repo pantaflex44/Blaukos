@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,9 +29,7 @@
 namespace Core\Controllers;
 
 use Core\Libs\Controller;
-
 use function Core\Libs\abort;
-use function Core\Libs\logError;
 use function Core\Libs\logHttpError;
 
 /**
@@ -39,29 +37,6 @@ use function Core\Libs\logHttpError;
  */
 class ErrorsController extends Controller
 {
-
-    /**
-     * Raise an HTTP error
-     *
-     * @param integer $code HTTP error code
-     * @param string $message HTTP error message
-     * @param string $info Custum message
-     * @return void
-     */
-    private function _error(int $code, string $message, string $info)
-    {
-        logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
-
-        $this->render([
-            'httpError'     => [
-                'code'      => $code,
-                'message'   => $message,
-                'info'      => $info,
-            ]
-        ]);
-
-        abort($code, $this->appType());
-    }
 
     /**
      * Controller: error 500
@@ -76,6 +51,30 @@ class ErrorsController extends Controller
             _("Erreur critique. Veuillez réessayer plus-tard."),
             _("Houston, on a un problème!")
         );
+    }
+
+    /**
+     * Raise an HTTP error
+     *
+     * @param integer $code HTTP error code
+     * @param string $message HTTP error message
+     * @param string $info Custum message
+     * @return void
+     */
+    private function _error(int $code, string $message, string $info)
+    {
+        logHttpError(debug_backtrace(), $code, __FILE__, __LINE__);
+
+        $this->render([
+            'errors' => [
+                'title' => sprintf(_("Erreur %s"), $code),
+                'message' => $message,
+                'header' => $info,
+                'code' => $code,
+            ]
+        ]);
+
+        abort($code, $this->appType());
     }
 
     /**

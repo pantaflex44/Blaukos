@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,7 +33,6 @@ use Core\Libs\Env;
 use Core\Libs\Tto;
 use DateTimeImmutable;
 use Exception;
-
 use function Core\Libs\jwtToken;
 use function Core\Libs\passwordCompare;
 use function Core\Libs\secureToken;
@@ -42,7 +41,7 @@ use function Core\Libs\secureToken;
  * An user table
  *
  * @table users
- * 
+ *
  * @field id:integer "-1"
  * @field token:string ""
  * @field active:integer "1"
@@ -57,12 +56,10 @@ use function Core\Libs\secureToken;
  * @field htmldir:string "ltr"
  * @field resetLinkToken:string ""
  * @field resetLinkValidity:datetime "1970-01-01 00:00:00"
- * 
+ *
  * @enum roleTitle:0 "Visiteur"
  * @enum roleTitle:1 "Abonné"
- * @enum roleTitle:2 "Gestionnaire"
- * @enum roleTitle:98 "Administrateur"
- * @enum roleTitle:99 "Super-Administrateur"
+ * @enum roleTitle:99 "Administrateur"
  */
 class User extends Tto
 {
@@ -76,26 +73,6 @@ class User extends Tto
     public function __construct(Engine $engine, ?int $id = null)
     {
         parent::__construct($engine, $id);
-    }
-
-    /**
-     * Is it a guest user?
-     *
-     * @return boolean true, user is a guest user, else, false
-     */
-    public function isGuest(): bool
-    {
-        return (isset($this->id) && $this->id == -1);
-    }
-
-    /**
-     * Is it a guest user?
-     *
-     * @return boolean true, user is a logged user, else, false
-     */
-    public function isLogged(): bool
-    {
-        return (isset($this->id) && $this->id > -1);
     }
 
     /**
@@ -152,6 +129,16 @@ class User extends Tto
     }
 
     /**
+     * Is it a guest user?
+     *
+     * @return boolean true, user is a guest user, else, false
+     */
+    public function isGuest(): bool
+    {
+        return (isset($this->id) && $this->id == -1);
+    }
+
+    /**
      * Clear the authorization token
      *
      * @return bool true, token cleared, else, false
@@ -204,14 +191,13 @@ class User extends Tto
      */
     public function clearResetLink(): ?User
     {
-        if ($this->isLogged()) {
+        if ($this->id === -1) {
             return null;
         }
 
         try {
-            $this->token = '';
-            $this->resetLinkValidity = (new DateTimeImmutable())
-                ->getTimestamp();
+            $this->resetLinkToken = '-';
+            $this->resetLinkValidity = (new DateTimeImmutable());
 
             if (!$this->update()) {
                 return null;
@@ -221,5 +207,15 @@ class User extends Tto
         } catch (Exception $ex) {
             return null;
         }
+    }
+
+    /**
+     * Is it a guest user?
+     *
+     * @return boolean true, user is a logged user, else, false
+     */
+    public function isLogged(): bool
+    {
+        return (isset($this->id) && $this->id > -1);
     }
 }

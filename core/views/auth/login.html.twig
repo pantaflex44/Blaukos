@@ -1,5 +1,4 @@
 {#
-
 Blaukos - PHP Micro Framework
 
 MIT License
@@ -23,92 +22,136 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 #}
-
+{% set isAdmin = true %}
 {% set title = "Connexion"|_ %}
-{% extends 'base.html.twig' %}
+{% set breadcrumb = [
+    ["Accueil"|_, "home"],
+    ["Connexion"|_, "login"]
+] %}
 
+{% extends 'body.html.twig' %}
+
+{% block styles %}
+    {% if env('APP_AUTH_USE_JS', true) %}
+        <link rel="preload" as="script" href="/scripts/auth/auth.js">
+        <link rel="preload" as="script" href="/scripts/auth/login.js">
+        <link rel="preload" as="script" href="/scripts/auth/passwordlost.js">
+    {% endif %}
+{% endblock %}
 {% block scripts %}
-{% if env('APP_AUTH_USE_JS', true) %}
-<script type="text/javascript" src="/scripts/auth/auth.js"></script>
-{% endif %}
+    {% if env('APP_AUTH_USE_JS', true) %}
+        <script type="text/javascript" src="/scripts/auth/auth.js"></script>
+        <script type="text/javascript" src="/scripts/auth/login.js"></script>
+        <script type="text/javascript" src="/scripts/auth/passwordlost.js"></script>
+    {% endif %}
 {% endblock %}
 
-{% block body %}
-    {% include 'header.html.twig' %}
-
-    <main class="container-fluid py-5 small">
+{% block main %}
+    <article class="container-fluid py-5 small">
 
         <div class="mx-auto" style="width: 100%; max-width: 25rem;">
+
             <nav>
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                    <button class="nav-link active" id="nav-connection-tab" data-bs-toggle="tab" data-bs-target="#nav-connection" type="button" role="tab" aria-controls="nav-connection" aria-selected="true"><i class="fas fa-key me-2 d-none d-sm-inline-block"></i>{{ "Connexion"|_ }}</button>
-                    <button class="nav-link" id="nav-passwordlost-tab" data-bs-toggle="tab" data-bs-target="#nav-passwordlost" type="button" role="tab" aria-controls="nav-passwordlost" aria-selected="false"><i class="fas fa-search me-2 d-none d-sm-inline-block"></i>{{ "Mot de passe oublié"|_ }}</button>
+                    <button class="nav-link active" id="nav-connection-tab" data-bs-toggle="tab"
+                            data-bs-target="#nav-connection" type="button" role="tab" aria-controls="nav-connection"
+                            aria-selected="true">
+                        <i class="fas fa-key me-2 d-none d-sm-inline-block"></i>{{ "Connexion"|_ }}
+                    </button>
+                    <button class="nav-link" id="nav-passwordlost-tab" data-bs-toggle="tab"
+                            data-bs-target="#nav-passwordlost" type="button" role="tab" aria-controls="nav-passwordlost"
+                            aria-selected="false">
+                        <i class="fas fa-search me-2 d-none d-sm-inline-block"></i>{{ "Mot de passe oublié"|_ }}
+                    </button>
                 </div>
             </nav>
             <div class="tab-content" id="nav-tabContent">
 
                 {% if env('APP_AUTH_USE_JS', true) %}
-                <div class="bg-white border-start border-end m-0 px-3 pt-3">
-                    <div id="alert" class="alert alert-danger m-0 d-none" role="alert"></div>
-                </div>
+                    <div class="bg-white border-start border-end m-0 px-3 pt-3">
+                        <div id="alert" class="alert alert-danger m-0 d-none" role="alert"></div>
+                    </div>
                 {% endif %}
-                
-                <div class="tab-pane bg-white border-start border-bottom border-end p-3 show active" id="nav-connection" role="tabpanel" aria-labelledby="nav-connection-tab">
+
+                <div class="tab-pane bg-white border-start border-bottom border-end p-3 show active" id="nav-connection"
+                     role="tabpanel" aria-labelledby="nav-connection-tab">
 
                     <form id="form_login" method="{{ formMethodLogin }}" action="{{ actionLogin }}">
 
                         <p class="lead">{{ "Accéder à mon espace."|_ }}</p>
                         <p class="small text-muted mb-4">{{ "Pour celà, renseignez le nom d'utilisateur et le mot de passe de votre compte."|_ }}</p>
-                        
+
                         {{ csrfFieldLogin|raw }}
 
                         <label for="form_login_username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control form-control-sm mb-3" id="form_login_username" name="username" placeholder=" " autocomplete="off" required>
+                        <input type="text" class="form-control form-control-sm mb-3" id="form_login_username"
+                               name="username" placeholder=" " autocomplete="off" required>
 
                         <label for="form_login_password" class="form-label">Mot de passe</label>
                         <div class="input-group input-group-sm flex-nowrap mb-1">
-                            <input type="password" class="form-control" id="form_login_password" name="password" placeholder=" " aria-label="{{ "Mot de passe"|_ }}" aria-describedby="passwordView" autocomplete="off" required>
-                            <span class="input-group-text text-muted" style="cursor: pointer;" id="passwordView" title="{{ "Voir le mot de passe"|_ }}" onmousedown="document.getElementById('password').setAttribute('type', 'text');" onmouseup="document.getElementById('password').setAttribute('type', 'password');">
+                            <input type="password" class="form-control" id="form_login_password" name="password"
+                                   placeholder=" " aria-label="{{ "Mot de passe"|_ }}" aria-describedby="passwordView"
+                                   autocomplete="off" required>
+                            <span class="input-group-text text-muted" style="cursor: pointer;" id="passwordView"
+                                  title="{{ "Voir le mot de passe"|_ }}"
+                                  onmousedown="document.getElementById('form_login_password').setAttribute('type', 'text');"
+                                  onmouseup="document.getElementById('form_login_password').setAttribute('type', 'password');">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
 
                         <div class="d-flex flex-row gap-2 justify-content-between align-items-center mt-4">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "retour"|_ }}</a>
-                            <span id="form_login_spinner" class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status" aria-hidden="true"></span>
-                            <input id="form_login_submit" type="submit" class="btn btn-sm btn-success" role="submit" value="{{ "connexion"|_ }}">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}"
+                               role="button">{{ "retour"|_ }}</a>
+                            <span id="form_login_spinner"
+                                  class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status"
+                                  aria-hidden="true"></span>
+                            <input id="form_login_submit" type="submit" class="btn btn-sm btn-primary" role="submit"
+                                   value="{{ "connexion"|_ }}">
                         </div>
                     </form>
 
                 </div>
 
-                <div class="tab-pane bg-white border-start border-bottom border-end p-3" id="nav-passwordlost" role="tabpanel" aria-labelledby="nav-passwordlost-tab">
+                <div class="tab-pane bg-white border-start border-bottom border-end p-3" id="nav-passwordlost"
+                     role="tabpanel" aria-labelledby="nav-passwordlost-tab">
 
-                    <form id="form_passwordlost" method="{{ formMethodPasswordLost }}" action="{{ actionPasswordLost }}">
-                        
+                    <form id="form_passwordlost" method="{{ formMethodPasswordLost }}"
+                          action="{{ actionPasswordLost }}">
+
                         <p class="lead">{{ "Vous êtes sur le point de demander un lien de réinitialisation pour votre mot de passe."|_ }}</p>
                         <p class="small text-muted mb-4">{{ "Renseignez le nom d'utilisateur associé à votre compte. Un message sera envoyé à l'adresse email connue pour cet identifiant."|_ }}</p>
 
                         {{ csrfFieldPasswordLost|raw }}
 
                         <label for="form_passwordlost_username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control form-control-sm mb-3" id="form_passwordlost_username" name="username" placeholder=" " autocomplete="off" required>
+                        <input type="text" class="form-control form-control-sm mb-3" id="form_passwordlost_username"
+                               name="username" placeholder=" " autocomplete="off" required>
 
                         <div class="d-flex flex-row gap-2 justify-content-between align-items-center mt-4">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}" role="button">{{ "retour"|_ }}</a>
-                            <span id="form_passwordlost_spinner" class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status" aria-hidden="true"></span>
-                            <input id="form_passwordlost_submit" type="submit" class="btn btn-sm btn-success" role="submit" value="{{ "valider"|_ }}">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('home') }}"
+                               role="button">{{ "retour"|_ }}</a>
+                            <span id="form_passwordlost_spinner"
+                                  class="spinner-border spinner-border-sm text-secondary me-3 d-none" role="status"
+                                  aria-hidden="true"></span>
+                            <input id="form_passwordlost_submit" type="submit" class="btn btn-sm btn-primary"
+                                   role="submit" value="{{ "valider"|_ }}">
                         </div>
                     </form>
 
                 </div>
 
             </div>
+
+            <div class="m-0 mt-5 p-0 text-center">
+                <a href="{{ env('BLAUKOS_URL') }}" target="_blank" rel="noopener"
+                   title="{{ env('BLAUKOS_NAME') }} v{{ env('BLAUKOS_VERSION') }}">
+                    <img src="/images/logo48.png" width="48" height="48"
+                         alt="{{ env('BLAUKOS_NAME') }} v{{ env('BLAUKOS_VERSION') }}">
+                </a>
+            </div>
         </div>
 
-    </main>
-
-    {% include 'footer.html.twig' %}
-{% endblock body %}
+    </article>
+{% endblock main %}

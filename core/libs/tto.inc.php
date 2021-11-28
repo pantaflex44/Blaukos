@@ -116,9 +116,9 @@ class Tto
      *
      * @param $value Value to convert
      * @param string $type Wanted type from allowed type
-     * @return The value converted
+     * @return bool|DateTimeImmutable|float|int|string value converted
      */
-    private function _convert($value, string $type)
+    private function _convert($value, string $type): float|DateTimeImmutable|bool|int|string
     {
         $type = $this->_typeExists($type);
         if (is_null($type)) {
@@ -126,24 +126,15 @@ class Tto
         }
 
         try {
-            switch ($type) {
-                case 'integer':
-                    return intval($value);
-                case 'float':
-                    return floatval($value);
-                case 'string':
-                    return strval($value);
-                case 'boolean':
-                    return (intval($value) == 1) ? true : false;
-                case 'datetime':
-                    return (new DateTimeImmutable())->createFromFormat('Y-m-d H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
-                case 'date':
-                    return (new DateTimeImmutable())->createFromFormat('Y-m-d', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
-                case 'time':
-                    return (new DateTimeImmutable())->createFromFormat('H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone());
-                default:
-                    return strval($value);
-            }
+            return match ($type) {
+                'integer'   => intval($value),
+                'float'     => floatval($value),
+                'boolean'   => intval($value) == 1,
+                'datetime'  => (new DateTimeImmutable())->createFromFormat('Y-m-d H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone()),
+                'date'      => (new DateTimeImmutable())->createFromFormat('Y-m-d', $value, (IntlTimeZone::createDefault())->toDateTimeZone()),
+                'time'      => (new DateTimeImmutable())->createFromFormat('H:i:s', $value, (IntlTimeZone::createDefault())->toDateTimeZone()),
+                default     => strval($value),
+            };
         } catch (Exception $ex) {
             return strval($value);
         }
@@ -152,11 +143,11 @@ class Tto
     /**
      * Convert a value from an allowed type to sql type
      *
-     * @param $value Value to convert
+     * @param $sqlvalue
      * @param string $type Wanted type from allowed type to sql type
-     * @return The value converted
+     * @return float|int|string value converted
      */
-    private function _toSqlType($sqlvalue, string $type)
+    private function _toSqlType($sqlvalue, string $type): float|int|string
     {
         $type = $this->_typeExists($type);
         if (is_null($type)) {
@@ -164,24 +155,15 @@ class Tto
         }
 
         try {
-            switch ($type) {
-                case 'integer':
-                    return intval($sqlvalue);
-                case 'float':
-                    return floatval($sqlvalue);
-                case 'string':
-                    return strval($sqlvalue);
-                case 'boolean':
-                    return $sqlvalue === true ? 1 : 0;
-                case 'datetime':
-                    return $sqlvalue->format('Y-m-d H:i:s');
-                case 'date':
-                    return $sqlvalue->format('Y-m-d');
-                case 'time':
-                    return $sqlvalue->format('H:i:s');
-                default:
-                    return strval($sqlvalue);
-            }
+            return match ($type) {
+                'integer'   => intval($sqlvalue),
+                'float'     => floatval($sqlvalue),
+                'boolean'   => $sqlvalue === true ? 1 : 0,
+                'datetime'  => $sqlvalue->format('Y-m-d H:i:s'),
+                'date'      => $sqlvalue->format('Y-m-d'),
+                'time'      => $sqlvalue->format('H:i:s'),
+                default     => strval($sqlvalue),
+            };
         } catch (Exception $ex) {
             return strval($sqlvalue);
         }
@@ -191,9 +173,9 @@ class Tto
      * Return a field sql converted value by his name
      *
      * @param string $name Field name
-     * @return void
+     * @return float|int|string
      */
-    public function _toSqlValue(string $name)
+    public function _toSqlValue(string $name): float|int|string
     {
         if (array_key_exists($name, $this->_fields)) {
             $v = $this->_fields[$name]['value'];
@@ -204,7 +186,6 @@ class Tto
         }
 
         throw (new InvalidArgumentException("Bad property name: $name"));
-        return null;
     }
 
     /**
@@ -262,7 +243,7 @@ class Tto
     /**
      * Return the SQL param type from a field name
      *
-     * @param string $fieldName The field name
+     * @param string $name The field name
      * @return integer The PDO Param type
      */
     private function _fieldToSqlParamType(string $name): int
@@ -271,7 +252,8 @@ class Tto
             return PDO::PARAM_STR;
         }
 
-        return $this->_sqlParamTypes[$this->_fields[$name]['type']];
+        $type = $this->_fields[$name]['type'];
+        return $this->_sqlParamTypes[$type];
     }
 
     /**
@@ -284,25 +266,22 @@ class Tto
         try {
             $conn = $this->engine()->db()->connection();
 
-            $query = $this->_query['query'];
+            $query = $this->toSql();
 
-            if (count($this->_order) == 2) {
-                $query .= ' ORDER BY ' . $this->_order[0] . ' ' . $this->_order[1];
-            }
+            foreach ($this->_query['params'] as $key => $value) {
+                $wantedType = gettype($this->_fields[$key]['value']);
 
-            if ($this->_limit != -1) {
-                $query .= ' LIMIT ' . $this->_limit;
-            }
+                $sqlType = $this->_fieldToSqlParamType($key);
+                $sqlKey = ':' . $key;
+                $sqlValue = $this->_toSqlType($value, $wantedType);
+                if (is_string($sqlValue)) {
+                    $sqlValue = $conn->quote($sqlValue, $sqlType);
+                }
 
-            if ($this->_offset != -1) {
-                $query .= ' OFFSET ' . $this->_offset;
+                $query = str_replace($sqlKey, $sqlValue, $query);
             }
 
             $stmt = $conn->prepare($query);
-            foreach ($this->_query['params'] as $key => $value) {
-                $stmt->bindParam(':' . $key, $value, $this->_fieldToSqlParamType($key));
-            }
-
             if (!$stmt->execute()) {
                 return null;
             }
@@ -399,7 +378,6 @@ class Tto
         }
 
         throw (new InvalidArgumentException("Bad property name: $name"));
-        return null;
     }
 
     /**
@@ -413,19 +391,16 @@ class Tto
         $name = trim($name);
         if (!array_key_exists($name, $this->_fields)) {
             throw (new InvalidArgumentException("Bad property name `$name`"));
-            return;
         }
 
         if ($this->hasId() && $name == 'id') {
             throw (new InvalidArgumentException("Readonly `$name` property"));
-            return;
         }
 
         $wantedType = gettype($this->_fields[$name]['value']);
         $type = gettype($value);
         if ($type != $wantedType) {
             throw (new InvalidArgumentException("Bad property `$name` value type `$type`. Expected `$wantedType`"));
-            return;
         }
 
         $this->_fields[$name]['value'] = $value;
@@ -544,6 +519,8 @@ class Tto
         }
 
         $this->_order = [$name, 'ASC'];
+
+        return $this;
     }
 
     /**
@@ -560,6 +537,35 @@ class Tto
         }
 
         $this->_order = [$name, 'DESC'];
+
+        return $this;
+    }
+
+    /**
+     * Return the SQL query
+     *
+     * @return string The SQL query
+     */
+    public function toSql(): string {
+        try {
+            $query = $this->_query['query'];
+
+            if (count($this->_order) == 2) {
+                $query .= ' ORDER BY ' . $this->_order[0] . ' ' . $this->_order[1];
+            }
+
+            if ($this->_limit != -1) {
+                $query .= ' LIMIT ' . $this->_limit;
+            }
+
+            if ($this->_offset != -1) {
+                $query .= ' OFFSET ' . $this->_offset;
+            }
+
+            return $query;
+        } catch (Exception $ex) {
+            return '';
+        }
     }
 
     /**
@@ -576,14 +582,12 @@ class Tto
             }
 
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
             if (!$result) {
                 return null;
             }
 
             $this->_assoc = $result;
-            if (!$this->_assoc) {
-                return null;
-            }
 
             return $this->populate();
         } catch (Exception $ex) {
@@ -649,9 +653,9 @@ class Tto
      * Get from id
      *
      * @param integer $id The wanted id
-     * @return Tto
+     * @return Tto|null
      */
-    public function fromId(int $id): Tto
+    public function fromId(int $id): ?Tto
     {
         if (!$this->hasId()) {
             return null;
@@ -688,7 +692,7 @@ class Tto
         list($name, $operator) = $prepared;
 
         $query .= sprintf(
-            '%1$s %2$s %3$s :%2$s',
+            '%1$s %2$s%3$s:%2$s',
             ($binary ? ' BINARY' : ''),
             $name,
             $operator
@@ -720,7 +724,7 @@ class Tto
         list($name, $operator) = $prepared;
 
         $query = sprintf(
-            ' OR %1$s %2$s :%1$s',
+            ' OR %1$s%2$s:%1$s',
             $name,
             $operator
         );
@@ -749,7 +753,7 @@ class Tto
         list($name, $operator) = $prepared;
 
         $query = sprintf(
-            ' AND %1$s %2$s :%1$s',
+            ' AND %1$s%2$s:%1$s',
             $name,
             $operator
         );

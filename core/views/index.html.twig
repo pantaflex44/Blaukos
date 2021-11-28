@@ -1,14 +1,10 @@
 {% set title = "Bienvenue"|_ %}
-{% extends 'base.html.twig' %}
+{% set breadcrumb = [
+    ["Accueil"|_, "home"]
+] %}
 
-{% block body %}
-    {% include 'header.html.twig' %}
+{% extends 'body.html.twig' %}
 
-    <main class="container-fluid py-5 small">
-        <p>Accueil</p>
-        <p>Bonjour {{ user.displayName|_ }} avec le role {{ enums.roleTitle[user.role]|_ }}</p>
-        
-    </main>
-
-    {% include 'footer.html.twig' %}
-{% endblock body %}
+{% block main %}
+    <h1>Accueil</h1>
+{% endblock main %}
