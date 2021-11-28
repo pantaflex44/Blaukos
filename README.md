@@ -1,6 +1,7 @@
-<img width="64" height="64" src="./public/images/logo64.png" style="margin-right: 1rem; float: left; vertical-align: center">
-
-# Blaukos
+<div style="vertical-align: middle;">
+    <img width="64" height="64" src="./public/images/logo64.png" style="margin-right: 1rem; float: left;">
+    <h1>Blaukos</h1>
+</div>
 
 ## Micro Framwork PHP 7+
 
@@ -8,8 +9,6 @@
 + Copyright (c)2021 Christophe LEMOINE
 + Version 0.1.0 (en cours de développement)
 + Projet initié le 23 octobre 2021
-
-
 + <u>Auteur</u>: Christophe LEMOINE (<pantaflex@hotmail.fr>)
 + <u>Github</u>: https://github.com/pantaflex44/Blaukos
   <br>
