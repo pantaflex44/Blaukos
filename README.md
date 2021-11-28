@@ -1,7 +1,5 @@
-<div style="vertical-align: middle;">
-    <img width="64" height="64" src="./public/images/logo64.png" style="margin-right: 1rem; float: left;">
-    <h1>Blaukos</h1>
-</div>
+<img width="128" height="128" src="./public/images/logo128.png" style="margin-right: 1rem;">
+<h1 style="margin: 0; padding: 0;">Blaukos</h1>
 
 ## Micro Framwork PHP 7+
 
