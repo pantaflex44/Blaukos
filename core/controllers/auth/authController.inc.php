@@ -168,8 +168,8 @@ class AuthController extends Controller
             $this->callError(400);
         }
 
-        $username = filter_var(trim($username), FILTER_SANITIZE_STRING);
-        $password = filter_var(trim($password), FILTER_SANITIZE_STRING);
+        $username = filter_var(trim($username), FILTER_UNSAFE_RAW);
+        $password = filter_var(trim($password), FILTER_UNSAFE_RAW);
 
         $user = (new User($this->engine()))->login($username, $password);
         if (!$user->isLogged()) {
@@ -260,7 +260,7 @@ class AuthController extends Controller
             $this->callError(400);
         }
 
-        $username = filter_var($form->username, FILTER_SANITIZE_STRING, FILTER_NULL_ON_FAILURE) ?? null;
+        $username = filter_var($form->username, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE) ?? null;
         if (is_null($username)) {
             $this->csrfHeader();
             $errorMessage = _("Nom d'utilisateur incorrect.");
@@ -486,8 +486,8 @@ class AuthController extends Controller
             return;
         }
 
-        $password = filter_var($form->password, FILTER_SANITIZE_STRING, FILTER_NULL_ON_FAILURE) ?? null;
-        $passwordbis = filter_var($form->passwordbis, FILTER_SANITIZE_STRING, FILTER_NULL_ON_FAILURE) ?? null;
+        $password = filter_var($form->password, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE) ?? null;
+        $passwordbis = filter_var($form->passwordbis, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE) ?? null;
         if (is_null($password) || is_null($passwordbis) || $password !== $passwordbis) {
             $this->csrfHeader();
             $errorMessage = _("Mot de passe incorrect. La confirmation est différente de l'original...");

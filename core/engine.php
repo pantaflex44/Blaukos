@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,8 +29,8 @@
 namespace Core;
 
 use Core\Libs\Annotations;
-use Core\Libs\Env;
 use Core\Libs\Database;
+use Core\Libs\Env;
 use Core\Libs\Form;
 use Core\Libs\IDB;
 use Core\Libs\Protect;
@@ -43,7 +43,6 @@ use DI\ContainerBuilder;
 use Exception;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use PHPMailer\PHPMailer\PHPMailer;
-
 use function Core\Libs\auth;
 use function Core\Libs\autoImport;
 use function Core\Libs\initSession;
@@ -76,6 +75,8 @@ autoImport();
 class Engine
 {
 
+    private static self $_instance;
+
     private ?IDB $_db = null;
     private Route $_route;
     private Form $_form;
@@ -83,76 +84,6 @@ class Engine
     private Translation $_translation;
     private ?User $_user;
     private Protect $_protect;
-
-    /**
-     * Return the database manager
-     *
-     * @return IDB|null The database manager or null 
-     */
-    public function db(): ?IDB
-    {
-        return $this->_db;
-    }
-
-    /**
-     * Routes manager
-     *
-     * @return Route
-     */
-    public function route(): Route
-    {
-        return $this->_route;
-    }
-
-    /**
-     * Form manager
-     *
-     * @return Form
-     */
-    public function form(): Form
-    {
-        return $this->_form;
-    }
-
-    /**
-     * Form manager
-     *
-     * @return Form
-     */
-    public function template(): Template
-    {
-        return $this->_template;
-    }
-
-    /**
-     * Translation manager
-     *
-     * @return Translation
-     */
-    public function tr(): Translation
-    {
-        return $this->_translation;
-    }
-
-    /**
-     * Current user
-     *
-     * @return User
-     */
-    public function user(): User
-    {
-        return $this->_user;
-    }
-
-    /**
-     * App protection
-     *
-     * @return Protect
-     */
-    public function protect(): Protect
-    {
-        return $this->_protect;
-    }
 
     /**
      * The constructor
@@ -199,6 +130,75 @@ class Engine
             $this->_translation->setCurrent($this->_user->locale, true);
         }
 
+    }
+
+    /**
+     * Get an engine instance
+     * @return Engine|null An Engine instance
+     */
+    public static function instance(): self
+    {
+        return self::$_instance ??= new self();
+    }
+
+    /**
+     * Routes manager
+     *
+     * @return Route
+     */
+    public function route(): Route
+    {
+        return $this->_route;
+    }
+
+    /**
+     * Return the database manager
+     *
+     * @return IDB|null The database manager or null
+     */
+    public function db(): ?IDB
+    {
+        return $this->_db;
+    }
+
+    /**
+     * Form manager
+     *
+     * @return Form
+     */
+    public function form(): Form
+    {
+        return $this->_form;
+    }
+
+    /**
+     * Translation manager
+     *
+     * @return Translation
+     */
+    public function tr(): Translation
+    {
+        return $this->_translation;
+    }
+
+    /**
+     * Current user
+     *
+     * @return User
+     */
+    public function user(): User
+    {
+        return $this->_user;
+    }
+
+    /**
+     * App protection
+     *
+     * @return Protect
+     */
+    public function protect(): Protect
+    {
+        return $this->_protect;
     }
 
     /**
@@ -296,5 +296,15 @@ class Engine
             );
             return false;
         }
+    }
+
+    /**
+     * Form manager
+     *
+     * @return Form
+     */
+    public function template(): Template
+    {
+        return $this->_template;
     }
 }

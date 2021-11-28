@@ -9,6 +9,12 @@
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/phpmailer/phpmailer" />
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/symfony/polyfill-ctype" />
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/core/views/cache/0f" />
+      <excludeFolder url="file://$MODULE_DIR$/core/views/cache/2f" />
+      <excludeFolder url="file://$MODULE_DIR$/core/views/cache/4b" />
+      <excludeFolder url="file://$MODULE_DIR$/core/views/cache/5e" />
+      <excludeFolder url="file://$MODULE_DIR$/core/views/cache/de" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

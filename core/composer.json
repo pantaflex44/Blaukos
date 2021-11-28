@@ -1,4 +1,17 @@
 {
+    "name": "blaukos/blaukos",
+    "description": "PHP Micro Framework",
+    "license": "MIT",
+
+    "authors": [
+        {
+            "name": "Christophe LEMOINE",
+            "email": "pantaflex@hotmail.fr",
+            "homepage": "https://github.com/pantaflex44/Blaukos",
+            "role": "Developer"
+        }
+    ],
+
     "require": {
         "twig/twig": "^3.0",
         "phpmailer/phpmailer": "^6.5",

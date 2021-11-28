@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,8 +30,6 @@ namespace Core\Libs;
 
 use Core\Engine;
 use Exception;
-
-use function Core\Libs\uritoarray;
 
 /**
  * Manage routes
@@ -47,101 +45,22 @@ class Route
     private array $_routes = [];
 
     /**
-     * Compute annotation found by Annotation system
-     *
-     * @param string $className
-     * @param string $methodName
-     * @param array $matches
-     * @return void
+     * Constructor
      */
-    public function computeAnnotation(string $className, string $methodName, array $matches): void
+    public function __construct(Engine $engine)
     {
-        if (count($matches) != 5) {
-            return;
-        }
+        $this->_engine = $engine;
 
-        for ($i = 0; $i < count($matches[0]); $i++) {
-            $routeName = $matches[1][$i];
-            $routeType = $matches[2][$i];
-            $routeMethod = $matches[3][$i];
-            $routeUri = $matches[4][$i];
-            $routeCallback = [$className, $methodName];
+        $this->_method = isset($_SERVER['REQUEST_METHOD'])
+            ? strtoupper(trim(filter_var($_SERVER['REQUEST_METHOD'], FILTER_UNSAFE_RAW)))
+            : 'GET';
 
-            $this->add(
-                $routeName,
-                $routeType,
-                $routeMethod,
-                $routeUri,
-                $routeCallback
-            );
-        }
+        $uri = isset($_SERVER['REQUEST_URI'])
+            ? trim(filter_var($_SERVER['REQUEST_URI'], FILTER_UNSAFE_RAW))
+            : '/';
+        $this->_uri = uriToArray($uri);
 
-        $this->_save();
-    }
-
-    /**
-     * Call a method from a conttoller with params
-     *
-     * @param callable $callback Callback to execute
-     * @param array $params Array of callback parameters
-     * @return void
-     */
-    private function _call(callable $callback, array $params = []): bool
-    {
-        $calling = [$callback[0], '__calling'];
-        if (is_callable($calling)) {
-            call_user_func($calling, $callback);
-        }
-
-        $success = (call_user_func_array($callback, $params) === false) ? false : true;
-
-        if (!$success) {
-            logError(
-                sprintf(
-                    'Route callback error: %s',
-                    var_export($callback, true)
-                ),
-                __FILE__,
-                __LINE__
-            );
-
-            $this->call('500');
-        }
-
-        $called = [$callback[0], '__called'];
-        if (is_callable($called)) {
-            call_user_func($called, $callback);
-        }
-
-        return $success;
-    }
-
-    /**
-     * Save routes for caching
-     *
-     * @return void
-     */
-    private function _save()
-    {
-        $routes = [];
-
-        foreach ($this->_routes as $name => $route) {
-            $method = $route['method'];
-            $uri = '/' . arrayToUri($route['uri']);
-            $callback = [
-                get_class($route['callback'][0]),
-                $route['callback'][1],
-            ];
-
-            $routes[$name] = [
-                'method' => $method,
-                'uri' => $uri,
-                'callback' => $callback,
-            ];
-        }
-
-        $srz = serialize($routes);
-        @file_put_contents(self::FILE, $srz);
+        $this->_load();
     }
 
     /**
@@ -178,31 +97,12 @@ class Route
     }
 
     /**
-     * Constructor
-     */
-    public function __construct(Engine $engine)
-    {
-        $this->_engine  = $engine;
-
-        $this->_method = isset($_SERVER['REQUEST_METHOD'])
-            ? strtoupper(trim(filter_var($_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_STRING)))
-            : 'GET';
-
-        $uri = isset($_SERVER['REQUEST_URI'])
-            ? trim(filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_STRING))
-            : '/';
-        $this->_uri = uriToArray($uri);
-
-        $this->_load();
-    }
-
-    /**
      * Add new route condition
      *
      * @param string $name Route name
      * @param string $type Allowed application types (eg: 'web', 'api', 'web,api')
      * @param string $method HTTP method ('GET', 'POST', 'DELETE', 'PUT')
-     * @param string $uri Uri to query start with a / (eg: / | /post/{varname:type}). 'varname' is the varname without the $, type is a php gettype() return value @see https://www.php.net/manual/fr/function.gettype.php 
+     * @param string $uri Uri to query start with a / (eg: / | /post/{varname:type}). 'varname' is the varname without the $, type is a php gettype() return value @see https://www.php.net/manual/fr/function.gettype.php
      * @param array $callback Array of the callable controller (eg: [HomeController::class, 'index'])
      * @return void
      */
@@ -242,6 +142,67 @@ class Route
     }
 
     /**
+     * Compute annotation found by Annotation system
+     *
+     * @param string $className
+     * @param string $methodName
+     * @param array $matches
+     * @return void
+     */
+    public function computeAnnotation(string $className, string $methodName, array $matches): void
+    {
+        if (count($matches) != 5) {
+            return;
+        }
+
+        for ($i = 0; $i < count($matches[0]); $i++) {
+            $routeName = $matches[1][$i];
+            $routeType = $matches[2][$i];
+            $routeMethod = $matches[3][$i];
+            $routeUri = $matches[4][$i];
+            $routeCallback = [$className, $methodName];
+
+            $this->add(
+                $routeName,
+                $routeType,
+                $routeMethod,
+                $routeUri,
+                $routeCallback
+            );
+        }
+
+        $this->_save();
+    }
+
+    /**
+     * Save routes for caching
+     *
+     * @return void
+     */
+    private function _save()
+    {
+        $routes = [];
+
+        foreach ($this->_routes as $name => $route) {
+            $method = $route['method'];
+            $uri = '/' . arrayToUri($route['uri']);
+            $callback = [
+                get_class($route['callback'][0]),
+                $route['callback'][1],
+            ];
+
+            $routes[$name] = [
+                'method' => $method,
+                'uri' => $uri,
+                'callback' => $callback,
+            ];
+        }
+
+        $srz = serialize($routes);
+        @file_put_contents(self::FILE, $srz);
+    }
+
+    /**
      * Map routes and call a controller
      *
      * @return void
@@ -250,7 +211,7 @@ class Route
     {
         $routes = array_values(array_filter(
             $this->_routes,
-            fn ($route) => ($route['method'] == $this->_method && count($route['uri']) == count($this->_uri))
+            fn($route) => ($route['method'] == $this->_method && count($route['uri']) == count($this->_uri))
         ));
 
         $callable = false;
@@ -264,14 +225,14 @@ class Route
             for ($i = 0; $i < count($route['uri']); $i++) {
                 $item = $route['uri'][$i];
 
-                // if value of item from rule equals value of item from uri at same position, 
+                // if value of item from rule equals value of item from uri at same position,
                 // it's good and continue
                 if ($item === $this->_uri[$i]) {
                     $callable = true;
                     continue;
                 }
 
-                // else, if those items have same types, but not their values, 
+                // else, if those items have same types, but not their values,
                 // it's bad and break
                 if (gettype($item) == gettype($this->_uri[$i])) {
                     $callable = false;
@@ -312,27 +273,40 @@ class Route
     }
 
     /**
-     * Get the uri of an added route by her name
+     * Call a method from a conttoller with params
      *
-     * @param string $name Name of the route
-     * @param array $params Params to fill, optionnal
-     * @param boolean $full true, full url returned, else false
-     * @return string
+     * @param callable $callback Callback to execute
+     * @param array $params Array of callback parameters
+     * @return void
      */
-    public function get(string $name, array $params = [], bool $full = true): string
+    private function _call(callable $callback, array $params = []): bool
     {
-        $name = makeSlug($name);
-
-        if (!array_key_exists($name, $this->_routes)) {
-            return '';
+        $calling = [$callback[0], '__calling'];
+        if (is_callable($calling)) {
+            call_user_func($calling, $callback);
         }
 
-        $uri = arrayToUri($this->_routes[$name]['uri'], $params);
-        if ($uri != '') {
-            $uri = '/' . $uri;
+        $success = (call_user_func_array($callback, $params) === false) ? false : true;
+
+        if (!$success) {
+            logError(
+                sprintf(
+                    'Route callback error: %s',
+                    var_export($callback, true)
+                ),
+                __FILE__,
+                __LINE__
+            );
+
+            $this->call('500');
         }
 
-        return $full ? baseUrl() . $uri : $uri;
+        $called = [$callback[0], '__called'];
+        if (is_callable($called)) {
+            call_user_func($called, $callback);
+        }
+
+        return $success;
     }
 
     /**
@@ -356,6 +330,30 @@ class Route
         }
 
         return $this->_call($this->_routes[$name]['callback'], $params);
+    }
+
+    /**
+     * Get the uri of an added route by her name
+     *
+     * @param string $name Name of the route
+     * @param array $params Params to fill, optionnal
+     * @param boolean $full true, full url returned, else false
+     * @return string
+     */
+    public function get(string $name, array $params = [], bool $full = true): string
+    {
+        $name = makeSlug($name);
+
+        if (!array_key_exists($name, $this->_routes)) {
+            return '';
+        }
+
+        $uri = arrayToUri($this->_routes[$name]['uri'], $params);
+        if ($uri != '') {
+            $uri = '/' . $uri;
+        }
+
+        return $full ? baseUrl() . $uri : $uri;
     }
 
     /**
@@ -387,16 +385,6 @@ class Route
     }
 
     /**
-     * Purge cached routes
-     *
-     * @return void
-     */
-    public function purge()
-    {
-        @unlink(self::FILE);
-    }
-
-    /**
      * Purge and re-scan controllers
      *
      * @return void
@@ -406,5 +394,15 @@ class Route
         $this->purge();
 
         Annotations::scan($this->_engine);
+    }
+
+    /**
+     * Purge cached routes
+     *
+     * @return void
+     */
+    public function purge()
+    {
+        @unlink(self::FILE);
     }
 }

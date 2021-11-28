@@ -2,21 +2,21 @@
 
 /**
  * Blaukos - PHP Micro Framework
- * 
+ *
  * MIT License
- * 
+ *
  * Copyright (C) 2021 Christophe LEMOINE
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,23 +43,21 @@ class Annotations
      * Scan rules
      */
     private const SCAN_FOR = [
-        'scanEnums'                 => '/@enum[\s\t]+(\w+):(\w+)[\s\t]+"(.*)"/',
-        'scanControllers'           => [
+        'scanEnums' => '/@enum[\s\t]+(\w+):(\w+)[\s\t]+"(.*)"/',
+        'scanControllers' => [
             '/@route[\s\t]+(\w+)[\s\t]+(web|api|web[\s\t]*,[\s\t]*api|api[\s\t]*,[\s\t]*web):(GET|POST|PUT|DELETE)[\s\t]+"(.+)"/' => [
-                'engine'            => 'route',
-                'computeMethod'     => 'computeAnnotation'
+                'engine' => 'route',
+                'computeMethod' => 'computeAnnotation'
             ],
             '/@protect[\s\t]+flood[\s\t]+([0-9]+(\.[0-9]+)?)[\s\t]*s/' => [
-                'engine'            => 'protect',
-                'computeMethod'     => 'computeFloodAnnotation'
+                'engine' => 'protect',
+                'computeMethod' => 'computeFloodAnnotation'
             ],
         ],
     ];
 
     /**
      * Scan look for php annotations
-     *
-     * @return void
      */
     public static function scan(Engine $engine): void
     {
